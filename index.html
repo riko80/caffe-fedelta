@@ -432,7 +432,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <p style="font-size:13px;color:var(--muted);font-style:italic;line-height:1.6;">Crea la tua carta fedeltà gratuita.<br>Al <strong style="color:var(--espresso);">10° caffè</strong> (o cappuccino), uno è offerto!</p>
     </div>
     <div class="card">
-      <div style="background:var(--latte);border-radius:var(--rs);padding:11px 13px;margin-bottom:14px;font-size:13px;color:var(--muted);font-style:italic;line-height:1.6;">📱 La prossima volta ti riconosciamo automaticamente — niente password!</div>
+      <div style="background:var(--latte);border-radius:var(--rs);padding:11px 13px;margin-bottom:14px;font-size:13px;color:var(--muted);font-style:italic;line-height:1.6;">🔑 Scegli un PIN di 4 cifre — ti servirà per accedere senza il QR code.</div>
       <label class="lbl">Nome</label>
       <input class="inp" id="r-nome" type="text" placeholder="es. Mario" autocomplete="given-name">
       <label class="lbl">Cognome</label>
@@ -441,10 +441,14 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <input class="inp" id="r-email" type="email" placeholder="mario@email.com" autocomplete="email" inputmode="email">
       <label class="lbl">Scegli il tuo avatar</label>
       <div class="av-grid" id="r-avatars"></div>
+      <label class="lbl">PIN personale (4 cifre)</label>
+      <input class="inp" id="r-pin" type="tel" maxlength="4" inputmode="numeric" placeholder="es. 1234">
+      <label class="lbl">Conferma PIN</label>
+      <input class="inp" id="r-pin2" type="tel" maxlength="4" inputmode="numeric" placeholder="ripeti il PIN">
       <button class="btn btn-dark" id="r-btn" onclick="registerCliente()" style="margin-top:7px;">☕ Crea la mia carta fedeltà</button>
       <p id="r-err" style="color:var(--danger);font-size:12px;font-style:italic;margin-top:3px;display:none;"></p>
     </div>
-    <p style="text-align:center;font-size:11px;color:var(--muted);font-style:italic;margin-top:7px;">Nessuna app · Gratuito · Solo nome e email</p>
+    <p style="text-align:center;font-size:11px;color:var(--muted);font-style:italic;margin-top:7px;">Il PIN si può resettare al bar</p>
   </div>
 
   <div id="cl-waiting" style="display:none;max-width:480px;margin:0 auto;padding:22px 18px;">
@@ -503,6 +507,8 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:14px;line-height:1.6;">Inserisci la tua email per vedere la tua carta fedeltà.</p>
       <label class="lbl">Email</label>
       <input class="inp" id="acc-email" type="email" placeholder="mario@email.com" autocomplete="email" inputmode="email">
+      <label class="lbl">PIN (4 cifre)</label>
+      <input class="inp" id="acc-pin" type="tel" maxlength="4" inputmode="numeric" placeholder="il tuo PIN">
       <button class="btn btn-dark" id="acc-btn" onclick="accediConEmail()">☕ Accedi alla mia carta</button>
       <p id="acc-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:8px;display:none;"></p>
     </div>
@@ -618,6 +624,13 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
         <input class="inp" id="prof-cognome" type="text" autocomplete="family-name" placeholder="Il tuo cognome">
         <label class="lbl">Email</label>
         <input class="inp" id="prof-email" type="email" autocomplete="email" placeholder="la-tua@email.com">
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--latte);">
+          <h3 style="font-size:14px;margin-bottom:8px;">🔑 Cambia PIN</h3>
+          <label class="lbl">Nuovo PIN — lascia vuoto per non cambiarlo</label>
+          <input class="inp" id="prof-pin" type="tel" maxlength="4" inputmode="numeric" placeholder="nuovo PIN">
+          <label class="lbl">Conferma nuovo PIN</label>
+          <input class="inp" id="prof-pin2" type="tel" maxlength="4" inputmode="numeric" placeholder="ripeti PIN">
+        </div>
         <button class="btn btn-dark" onclick="salvaProfilo()">💾 Salva modifiche</button>
         <p id="prof-msg" style="font-size:13px;text-align:center;margin-top:6px;display:none;"></p>
       </div>
@@ -1359,10 +1372,14 @@ async function registerCliente(){
   const nome=document.getElementById('r-nome').value.trim();
   const cognome=(document.getElementById('r-cognome')?.value||'').trim();
   const email=document.getElementById('r-email').value.trim().toLowerCase();
+  const pin=(document.getElementById('r-pin')?.value||'').trim();
+  const pin2=(document.getElementById('r-pin2')?.value||'').trim();
   const av=document.querySelector('.av-btn.sel')?.textContent||'😊';
   const err=document.getElementById('r-err');
   if(!nome){err.textContent='Inserisci il tuo nome.';err.style.display='block';return;}
   if(!email||!email.includes('@')){err.textContent='Inserisci una email valida.';err.style.display='block';return;}
+  if(!pin||pin.length!==4||!/^\d{4}$/.test(pin)){err.textContent='Il PIN deve essere esattamente 4 cifre numeriche.';err.style.display='block';return;}
+  if(pin!==pin2){err.textContent='I due PIN non corrispondono.';err.style.display='block';return;}
   err.style.display='none';
   const btn=document.getElementById('r-btn');btn.disabled=true;btn.textContent='⏳...';
   try{
@@ -1372,7 +1389,7 @@ async function registerCliente(){
     const nums=Object.values(bin.clienti||{}).map(c=>c.numId||0);
     const numId=(nums.length?Math.max(...nums):0)+1;
     const id='c'+Date.now().toString(36);
-    const newC={id,numId,nome,cognome,email,avatar:av,puntiC:0,puntiK:0,totC:0,totK:0,totOmaggi:0,storia:[],notifiche:[],registrato:Date.now()};
+    const newC={id,numId,nome,cognome,email,pin,avatar:av,puntiC:0,puntiK:0,totC:0,totK:0,totOmaggi:0,storia:[],notifiche:[],registrato:Date.now()};
     bin.clienti=bin.clienti||{};bin.clienti[id]=newC;
     curCId=id;localStorage.setItem('cf_id',id);localStorage.setItem('cf_email',email);
     await sendRequest(bin,id);
@@ -1392,14 +1409,18 @@ async function sendRequest(bin,cid){
 
 async function accediConEmail(){
   const email=document.getElementById('acc-email').value.trim().toLowerCase();
+  const pin=(document.getElementById('acc-pin')?.value||'').trim();
   const err=document.getElementById('acc-err');
   if(!email||!email.includes('@')){err.textContent='Inserisci una email valida.';err.style.display='block';return;}
+  if(!pin||pin.length!==4){err.textContent='Inserisci il tuo PIN (4 cifre).';err.style.display='block';return;}
   err.style.display='none';
   const btn=document.getElementById('acc-btn');btn.disabled=true;btn.textContent='⏳...';
   try{
     const bin=await binGet();
     const found=Object.values(bin.clienti||{}).find(c=>c.email===email);
-    if(!found){err.textContent='Email non trovata.';err.style.display='block';btn.disabled=false;btn.textContent='☕ Accedi alla mia carta';return;}
+    if(!found){err.textContent='Email non trovata. Registrati scansionando il QR al bar.';err.style.display='block';btn.disabled=false;btn.textContent='☕ Accedi alla mia carta';return;}
+    if(!found.pin){err.textContent='Nessun PIN impostato. Chiedi al barista di impostartelo dalla tua scheda.';err.style.display='block';btn.disabled=false;btn.textContent='☕ Accedi alla mia carta';return;}
+    if(found.pin!==pin){err.textContent='PIN errato. Riprova o chiedi al barista di resettarlo.';err.style.display='block';btn.disabled=false;btn.textContent='☕ Accedi alla mia carta';return;}
     curCId=found.id;localStorage.setItem('cf_id',found.id);localStorage.setItem('cf_email',email);
     renderCartaCliente(found);showClSub('cl-carta');clTab('punti');
   }catch(e){err.textContent='Errore connessione.';err.style.display='block';}
@@ -1700,14 +1721,19 @@ async function salvaProfilo(){
       if(dup){msg.textContent='Email già usata da un altro account.';msg.style.color='var(--danger)';return;}
     }
     c.nome=nome;c.cognome=cognome;c.email=email;
+    const _np=(document.getElementById('prof-pin')?.value||'').trim();
+    const _np2=(document.getElementById('prof-pin2')?.value||'').trim();
+    if(_np){
+      if(_np.length!==4||!/^[0-9]{4}$/.test(_np)){msg.textContent='PIN: deve essere 4 cifre numeriche.';msg.style.color='var(--danger)';return;}
+      if(_np!==_np2){msg.textContent='I due PIN non corrispondono.';msg.style.color='var(--danger)';return;}
+      c.pin=_np;
+    }
     await binPut(bin);
     localStorage.setItem('cf_email',email);
     renderUBadge('cl-carta-badge',c);
-  // Pre-popola campi profilo se il tab è già aperto
-  if(document.getElementById('prof-nome'))document.getElementById('prof-nome').value=c.nome||'';
-  if(document.getElementById('prof-cognome'))document.getElementById('prof-cognome').value=c.cognome||'';
-  if(document.getElementById('prof-email'))document.getElementById('prof-email').value=c.email||'';
-    msg.textContent='✅ Profilo aggiornato!';msg.style.color='var(--success)';
+    document.getElementById('prof-pin').value='';
+    document.getElementById('prof-pin2').value='';
+    msg.textContent='✅ Profilo aggiornato'+(c.pin?' e PIN salvato':'')+('!');msg.style.color='var(--success)';
     setTimeout(()=>{msg.style.display='none';},3000);
   }catch(e){msg.textContent='Errore: '+e.message;msg.style.color='var(--danger)';}
 }
