@@ -268,20 +268,6 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     </div>
   </div>
 
-    <div id="cl-tab-profilo" style="max-width:480px;margin:0 auto;padding:14px;display:none;">
-      <div class="card">
-        <h2 style="margin-bottom:14px;">✏️ Modifica il tuo profilo</h2>
-        <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:14px;line-height:1.6;">Puoi correggere nome, cognome o email. Il numero tessera non è modificabile.</p>
-        <label class="lbl">Nome</label>
-        <input class="inp" id="prof-nome" type="text" autocomplete="given-name">
-        <label class="lbl">Cognome</label>
-        <input class="inp" id="prof-cognome" type="text" autocomplete="family-name">
-        <label class="lbl">Email</label>
-        <input class="inp" id="prof-email" type="email" autocomplete="email">
-        <button class="btn btn-dark" onclick="salvaProfilo()">💾 Salva modifiche</button>
-        <p id="prof-msg" style="font-size:13px;text-align:center;margin-top:6px;display:none;"></p>
-      </div>
-    </div>
 </div>
 
 <!-- ═══════ MODE ═══════ -->
@@ -506,25 +492,21 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     </div>
   </div>
 
+
   <div id="cl-accedi" style="display:none;max-width:480px;margin:0 auto;padding:22px 18px;">
     <div style="text-align:center;margin-bottom:20px;">
       <div style="font-size:52px;margin-bottom:9px;">☕</div>
-      <h1 style="font-size:23px;font-weight:normal;color:var(--espresso);margin-bottom:5px;">La mia carta fedeltà</h1>
-      <p style="font-size:13px;color:var(--muted);font-style:italic;">Accedi con la tua email o il numero tessera</p>
+      <h1 style="font-size:23px;font-weight:normal;color:var(--espresso);margin-bottom:5px;">Accedi alla tua carta</h1>
+      <p style="font-size:13px;color:var(--muted);font-style:italic;">Inserisci i tuoi dati per accedere</p>
     </div>
     <div class="card">
-      <label class="lbl">La tua email</label>
+      <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:14px;line-height:1.6;">Inserisci la tua email per vedere la tua carta fedeltà.</p>
+      <label class="lbl">Email</label>
       <input class="inp" id="acc-email" type="email" placeholder="mario@email.com" autocomplete="email" inputmode="email">
       <button class="btn btn-dark" id="acc-btn" onclick="accediConEmail()">☕ Accedi alla mia carta</button>
-      <p id="acc-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:3px;display:none;"></p>
+      <p id="acc-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:8px;display:none;"></p>
     </div>
-    <div style="text-align:center;margin:8px 0 14px;font-size:13px;color:var(--muted);">oppure</div>
-    <div class="card">
-      <label class="lbl">Numero tessera</label>
-      <input class="inp" id="acc-id" type="number" placeholder="es. 42" inputmode="numeric" style="margin-bottom:8px;">
-      <button class="btn btn-ghost" onclick="accediConId()">🔢 Accedi con numero tessera</button>
-    </div>
-    <p style="text-align:center;font-size:12px;color:var(--muted);font-style:italic;">Non ancora registrato? Scansiona il QR al bar!</p>
+    <p style="text-align:center;font-size:12px;color:var(--muted);font-style:italic;margin-top:10px;">Non ancora registrato? Scansiona il QR al bar!</p>
   </div>
 
   <!-- CARTA FEDELTÀ (schede) -->
@@ -625,6 +607,22 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
         <ul class="hist-list" id="cl-hist"></ul>
       </div>
     </div>
+
+    <div id="cl-tab-profilo" style="max-width:480px;margin:0 auto;padding:14px;display:none;">
+      <div class="card">
+        <h2 style="margin-bottom:14px;">✏️ Il tuo profilo</h2>
+        <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:14px;line-height:1.6;">Modifica nome, cognome o email. Il numero tessera non è modificabile.</p>
+        <label class="lbl">Nome</label>
+        <input class="inp" id="prof-nome" type="text" autocomplete="given-name" placeholder="Il tuo nome">
+        <label class="lbl">Cognome</label>
+        <input class="inp" id="prof-cognome" type="text" autocomplete="family-name" placeholder="Il tuo cognome">
+        <label class="lbl">Email</label>
+        <input class="inp" id="prof-email" type="email" autocomplete="email" placeholder="la-tua@email.com">
+        <button class="btn btn-dark" onclick="salvaProfilo()">💾 Salva modifiche</button>
+        <p id="prof-msg" style="font-size:13px;text-align:center;margin-top:6px;display:none;"></p>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -752,7 +750,20 @@ function showClSub(id){['cl-loading','cl-register','cl-waiting','cl-success','cl
 // PIN
 // ════════════════════════════════════
 function enterBarista(){pinBuf='';updDots();document.getElementById('pin-err').textContent='';showView('view-pin');}
-function enterCliente(){showView('view-mode');}
+function enterCliente(){
+  // Se ha già un id salvato vai direttamente alla carta
+  const sid=localStorage.getItem('cf_id');
+  if(sid&&CFG.dbUrl){
+    showView('view-cl');showClSub('cl-loading');
+    binGet().then(bin=>{
+      const c=bin.clienti&&bin.clienti[sid];
+      if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+      else{showView('view-cl');showClSub('cl-accedi');}
+    }).catch(()=>{showView('view-cl');showClSub('cl-accedi');});
+  }else{
+    showView('view-cl');showClSub('cl-accedi');
+  }
+}
 function accessoClienteEmail(){
   showView('view-cl');
   // Se ha già un id salvato, carica direttamente la carta
@@ -859,14 +870,14 @@ function checkOmaggiAlert(bin){
   const alertEl=document.getElementById('b-omaggi-alert');
   if(pronti.length){
     alertEl.style.display='flex';
-    document.getElementById('b-omaggi-nomi').innerHTML=' '+pronti.map(c=>{
-      const parts=[];
-      const idStr=c.numId?'<b>'+String(c.numId).padStart(4,'0')+'</b> ':'';
+    const righe=[];
+    pronti.forEach(c=>{
+      const idStr=c.numId?String(c.numId).padStart(4,'0'):'—';
       const nc=((c.nome||'')+' '+(c.cognome||'')).trim();
-      if((c.puntiC||0)>=OM)parts.push(idStr+nc+' <b>(☕ caffè)</b>');
-      if((c.puntiK||0)>=OM)parts.push(idStr+nc+' <b>(🥛 cappuccino)</b>');
-      return parts.join(', ');
-    }).join(' — ');
+      if((c.puntiC||0)>=OM)righe.push('<div style="padding:3px 0;"><b>'+idStr+'</b> '+nc+' — ☕ caffè</div>');
+      if((c.puntiK||0)>=OM)righe.push('<div style="padding:3px 0;"><b>'+idStr+'</b> '+nc+' — 🥛 cappuccino</div>');
+    });
+    document.getElementById('b-omaggi-nomi').innerHTML='<div style="margin-top:6px;">'+righe.join('')+'</div>';
   }else{alertEl.style.display='none';}
 }
 
@@ -1108,12 +1119,15 @@ async function salvaAnagraficaBarista(cid){
     }
     c.nome=nome;c.cognome=cognome;c.email=email;
     await binPut(bin);
-    msg.textContent='✅ Salvato!';msg.style.color='var(--success)';
-    // Aggiorna nome nel titolo nav
     const nc=((nome)+' '+(cognome)).trim();
     const navEl=document.getElementById('scheda-nav-name');
     if(navEl)navEl.textContent=(c.avatar||'')+' '+nc;
-    setTimeout(()=>{msg.style.display='none';},3000);
+    msg.textContent='✅ Salvato!';msg.style.color='var(--success)';
+    setTimeout(()=>{
+      msg.style.display='none';
+      // Ricarica la scheda per mostrare i dati aggiornati
+      apriScheda(cid);
+    },1500);
   }catch(e){msg.textContent='Errore: '+e.message;msg.style.color='var(--danger)';}
 }
 
@@ -1323,20 +1337,6 @@ async function sendRequest(bin,cid){
   showClSub('cl-waiting');startCPoll(cid);
 }
 
-async function accediConId(){
-  const raw=(document.getElementById('acc-id')?.value||'').trim();
-  const err=document.getElementById('acc-err');
-  if(!raw||isNaN(raw)){err.textContent="Inserisci un numero tessera valido.";err.style.display="block";return;}
-  const num=parseInt(raw,10);
-  err.style.display="none";
-  try{
-    const bin=await binGet();
-    const found=Object.values(bin.clienti||{}).find(c=>c.numId===num);
-    if(!found){err.textContent="Numero tessera non trovato.";err.style.display="block";return;}
-    curCId=found.id;localStorage.setItem('cf_id',found.id);localStorage.setItem('cf_email',found.email||'');
-    renderCartaCliente(found);showClSub('cl-carta');clTab('punti');
-  }catch(e){err.textContent="Errore connessione.";err.style.display="block";}
-}
 async function accediConEmail(){
   const email=document.getElementById('acc-email').value.trim().toLowerCase();
   const err=document.getElementById('acc-err');
@@ -1476,6 +1476,10 @@ function showClCarta(){
 
 function renderCartaCliente(c){
   renderUBadge('cl-carta-badge',c);
+  // Pre-popola campi profilo se il tab è già aperto
+  if(document.getElementById('prof-nome'))document.getElementById('prof-nome').value=c.nome||'';
+  if(document.getElementById('prof-cognome'))document.getElementById('prof-cognome').value=c.cognome||'';
+  if(document.getElementById('prof-email'))document.getElementById('prof-email').value=c.email||'';
   const pC=c.puntiC||0,pK=c.puntiK||0;
   document.getElementById('cl-nc').textContent=c.totC||0;
   document.getElementById('cl-nk').textContent=c.totK||0;
@@ -1646,6 +1650,10 @@ async function salvaProfilo(){
     await binPut(bin);
     localStorage.setItem('cf_email',email);
     renderUBadge('cl-carta-badge',c);
+  // Pre-popola campi profilo se il tab è già aperto
+  if(document.getElementById('prof-nome'))document.getElementById('prof-nome').value=c.nome||'';
+  if(document.getElementById('prof-cognome'))document.getElementById('prof-cognome').value=c.cognome||'';
+  if(document.getElementById('prof-email'))document.getElementById('prof-email').value=c.email||'';
     msg.textContent='✅ Profilo aggiornato!';msg.style.color='var(--success)';
     setTimeout(()=>{msg.style.display='none';},3000);
   }catch(e){msg.textContent='Errore: '+e.message;msg.style.color='var(--danger)';}
