@@ -1203,7 +1203,20 @@ async function initLanding(token){
     const bin=await binGet();
     const age=(Date.now()-(bin.tokenTs||0))/1000;
     if(bin.token!==token||age>QR_TTL+5){
-      document.getElementById('cl-loading').innerHTML='<div style="font-size:44px;margin-bottom:11px;">⏰</div><p style="font-size:15px;color:var(--danger);">QR scaduto.<br>Chiedi al barista un nuovo codice.</p>';
+      // QR scaduto: se l'utente ha già un account, mostra la carta
+      // altrimenti mostra registrazione con messaggio gentile
+      const savedId2=localStorage.getItem('cf_id');
+      if(savedId2&&bin.clienti&&bin.clienti[savedId2]){
+        curCId=savedId2;
+        renderCartaCliente(bin.clienti[savedId2]);
+        showClSub('cl-carta');
+        clTab('punti');
+        showToast('QR scaduto — ecco la tua carta');
+      } else {
+        // Prima volta: mostra registrazione con nota gentile
+        showRegistration(localStorage.getItem('cf_email')||'');
+        showToast('QR scaduto. Registrati comunque!');
+      }
       return;
     }
     if(savedId&&bin.clienti&&bin.clienti[savedId]){curCId=savedId;await sendRequest(bin,savedId);}
@@ -1718,100 +1731,113 @@ function closePWAModal(){
 // ════════════════════════════════════
 // INIT
 // ════════════════════════════════════
-window.addEventListener('load',()=>{
+window.addEventListener('load', function() {
   initPWA();
   loadCFG();
-  const p=new URLSearchParams(window.location.search);
-  const tok=p.get('t'), cp=p.get('c'), idp=p.get('id'), home=p.get('home');
 
-  // Decodifica config dall'URL se presente
-  if(cp){try{
-    const d=JSON.parse(atob(cp));
-    const dbUrl=d.u||null; // supporta solo formato Firebase {u:...}
-    if(dbUrl&&dbUrl.startsWith('https://')){
-      // Aggiorna CFG con il dbUrl dall'URL, preservando il pin del barista
-      const savedPin=CFG.pin||null;
-      CFG={dbUrl:dbUrl};
-      if(savedPin)CFG.pin=savedPin;
-      // Salva sempre in localStorage — serve per riapertura da icona
-      localStorage.setItem('cf_cfg',JSON.stringify(CFG));
-    }
-  }catch(e){}}
+  var p = new URLSearchParams(window.location.search);
+  var tok = p.get('t');
+  var cp  = p.get('c');
+  var idp = p.get('id');
 
-  // CASO: aperto dall'icona PWA (?home=1) o accesso diretto senza token
-  // → vai sempre alla carta cliente se l'id è salvato, mai al "QR scaduto"
-  if(home||(!tok&&!cp&&!idp)){
-    if(CFG.dbUrl){
-      const sid=localStorage.getItem('cf_id');
-      if(sid){
-        showView('view-cl');showClSub('cl-loading');
-        binGet().then(bin=>{
-          const c=bin.clienti&&bin.clienti[sid];
-          if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
-          else{showView('view-mode');}
-        }).catch(()=>{showView('view-mode');});
-        return;
+  // STEP 1: decodifica sempre il parametro c= se presente
+  if (cp) {
+    try {
+      var d = JSON.parse(atob(cp));
+      var dbUrl = d.u || null;
+      if (dbUrl && dbUrl.indexOf('https://') === 0) {
+        var savedPin = CFG.pin || null;
+        CFG = { dbUrl: dbUrl };
+        if (savedPin) CFG.pin = savedPin;
+        localStorage.setItem('cf_cfg', JSON.stringify(CFG));
       }
-    }
-    if(!CFG.dbUrl){showView('view-setup');return;}
-    showView('view-mode');
-    return;
+    } catch(e) {}
   }
 
-  // CASO: ?t=TOKEN → scansione QR fresca
-  if(tok){
-    if(!CFG.dbUrl){
-      // dbUrl non nel QR e non in localStorage — mostra schermata accesso email
-      // con istruzione di richiedere al barista il link completo
+  // STEP 2: se c'è un token QR, vai alla landing cliente — sempre
+  if (tok) {
+    if (!CFG.dbUrl) {
+      // dbUrl ancora mancante — mostra schermata semplice senza tecnicismi
       showView('view-cl');
-      showClSub('cl-loading');
-      document.getElementById('cl-loading').innerHTML=
-        '<div style="font-size:50px;margin-bottom:14px;">☕</div>'
-        +'<h2 style="font-size:18px;font-weight:normal;color:var(--espresso);margin-bottom:8px;">Benvenuto!</h2>'
-        +'<p style="font-size:13px;color:var(--muted);font-style:italic;line-height:1.7;margin-bottom:16px;">'
-        +'Il barista deve mostrarti il QR aggiornato.<br>'
-        +'Se hai già la tua carta, inserisci la tua email:</p>'
-        +'<div style="max-width:320px;margin:0 auto;">'
-        +'<input class="inp" id="fallback-email" type="email" placeholder="la-tua@email.com" style="margin-bottom:8px;">'
-        +'<button class="btn btn-dark" onclick="fallbackLogin()">Accedi alla mia carta</button>'
-        +'</div>';
+      showClSub('cl-accedi');
       return;
     }
-    initLanding(tok);return;
-  }
-
-  // CASO: ?c=...&id=... → link personale con id esplicito
-  if(cp&&idp&&CFG.dbUrl){
-    showView('view-cl');showClSub('cl-loading');
-    binGet().then(bin=>{
-      const c=bin.clienti&&bin.clienti[idp];
-      if(c){curCId=idp;localStorage.setItem('cf_id',idp);localStorage.setItem('cf_email',c.email);renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
-      else showClSub('cl-accedi');
-    }).catch(()=>showClSub('cl-accedi'));
+    initLanding(tok);
     return;
   }
 
-  // CASO: ?c=... senza id → cerca da localStorage o chiedi email
-  if(cp&&CFG.dbUrl){
-    const sid=localStorage.getItem('cf_id');
+  // STEP 3: link personale ?c=...&id=...
+  if (cp && idp && CFG.dbUrl) {
     showView('view-cl');
-    if(sid){
+    showClSub('cl-loading');
+    binGet().then(function(bin) {
+      var c = bin.clienti && bin.clienti[idp];
+      if (c) {
+        curCId = idp;
+        localStorage.setItem('cf_id', idp);
+        localStorage.setItem('cf_email', c.email);
+        renderCartaCliente(c);
+        showClSub('cl-carta');
+        clTab('punti');
+      } else {
+        showClSub('cl-accedi');
+      }
+    }).catch(function() { showClSub('cl-accedi'); });
+    return;
+  }
+
+  // STEP 4: link con solo ?c= (senza id) — usa id da localStorage
+  if (cp && CFG.dbUrl) {
+    var sid = localStorage.getItem('cf_id');
+    showView('view-cl');
+    if (sid) {
       showClSub('cl-loading');
-      binGet().then(bin=>{
-        const c=bin.clienti&&bin.clienti[sid];
-        if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
-        else showClSub('cl-accedi');
-      }).catch(()=>showClSub('cl-accedi'));
+      binGet().then(function(bin) {
+        var c = bin.clienti && bin.clienti[sid];
+        if (c) {
+          curCId = sid;
+          renderCartaCliente(c);
+          showClSub('cl-carta');
+          clTab('punti');
+        } else {
+          showClSub('cl-accedi');
+        }
+      }).catch(function() { showClSub('cl-accedi'); });
     } else {
       showClSub('cl-accedi');
     }
     return;
   }
 
-  // Se non ci sono parametri URL e non c'è config → setup
-  if(!CFG.dbUrl){showView('view-setup');return;}
-  showView('view-mode');
+  // STEP 5: apertura diretta senza parametri
+  if (CFG.dbUrl) {
+    var sid2 = localStorage.getItem('cf_id');
+    if (sid2) {
+      // Cliente con id salvato — mostra la sua carta
+      showView('view-cl');
+      showClSub('cl-loading');
+      binGet().then(function(bin) {
+        var c = bin.clienti && bin.clienti[sid2];
+        if (c) {
+          curCId = sid2;
+          renderCartaCliente(c);
+          showClSub('cl-carta');
+          clTab('punti');
+        } else {
+          showView('view-mode');
+        }
+      }).catch(function() { showView('view-mode'); });
+      return;
+    }
+    // Nessun id salvato — schermata scelta modalità
+    showView('view-mode');
+    return;
+  }
+
+  // STEP 6: nessuna configurazione — setup
+  showView('view-setup');
 });
+
 </script>
 </body>
 </html>
