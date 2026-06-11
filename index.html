@@ -1215,6 +1215,31 @@ async function initLanding(token){
   }catch(e){document.getElementById('cl-loading').innerHTML='<div style="font-size:44px;">❌</div><p style="font-size:14px;color:var(--danger);margin-top:11px;">Errore di connessione.<br>Riprova.</p>';showClSub('cl-loading');}
 }
 
+async function fallbackLogin(){
+  const email=(document.getElementById('fallback-email')?.value||'').trim().toLowerCase();
+  if(!email||!email.includes('@')){showToast('Inserisci la tua email');return;}
+  if(!CFG.dbUrl){showToast('Configurazione mancante. Scansiona il QR del barista.');return;}
+  showClSub('cl-loading');
+  try{
+    const bin=await binGet();
+    const found=Object.values(bin.clienti||{}).find(c=>c.email===email);
+    if(!found){
+      document.getElementById('cl-loading').innerHTML=
+        '<div style="font-size:44px;margin-bottom:11px;">😕</div>'
+        +'<p style="font-size:14px;color:var(--muted);font-style:italic;">Email non trovata.<br>Chiedil al barista il link o scansiona il QR aggiornato.</p>';
+      return;
+    }
+    curCId=found.id;
+    localStorage.setItem('cf_id',found.id);
+    localStorage.setItem('cf_email',email);
+    renderCartaCliente(found);
+    showClSub('cl-carta');
+    clTab('punti');
+  }catch(e){
+    document.getElementById('cl-loading').innerHTML='<div style="font-size:44px;">❌</div><p style="font-size:14px;color:var(--danger);margin-top:11px;">Errore connessione.<br>Riprova.</p>';
+  }
+}
+
 function showRegistration(pre){
   const g=document.getElementById('r-avatars');g.innerHTML='';
   AVATARS.forEach((av,i)=>{const b=document.createElement('button');b.className='av-btn';b.textContent=av;b.onclick=()=>{document.querySelectorAll('.av-btn').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');};if(i===0)b.classList.add('sel');g.appendChild(b);});
@@ -1736,8 +1761,20 @@ window.addEventListener('load',()=>{
   // CASO: ?t=TOKEN → scansione QR fresca
   if(tok){
     if(!CFG.dbUrl){
-      showView('view-cl');showClSub('cl-loading');
-      document.getElementById('cl-loading').innerHTML='<div style="font-size:50px;margin-bottom:14px;">😕</div><h2 style="font-size:17px;font-weight:normal;color:var(--espresso);">QR non valido</h2><p style="font-size:13px;color:var(--muted);font-style:italic;margin-top:6px;">Chiedi al barista un nuovo QR code.</p>';
+      // dbUrl non nel QR e non in localStorage — mostra schermata accesso email
+      // con istruzione di richiedere al barista il link completo
+      showView('view-cl');
+      showClSub('cl-loading');
+      document.getElementById('cl-loading').innerHTML=
+        '<div style="font-size:50px;margin-bottom:14px;">☕</div>'
+        +'<h2 style="font-size:18px;font-weight:normal;color:var(--espresso);margin-bottom:8px;">Benvenuto!</h2>'
+        +'<p style="font-size:13px;color:var(--muted);font-style:italic;line-height:1.7;margin-bottom:16px;">'
+        +'Il barista deve mostrarti il QR aggiornato.<br>'
+        +'Se hai già la tua carta, inserisci la tua email:</p>'
+        +'<div style="max-width:320px;margin:0 auto;">'
+        +'<input class="inp" id="fallback-email" type="email" placeholder="la-tua@email.com" style="margin-bottom:8px;">'
+        +'<button class="btn btn-dark" onclick="fallbackLogin()">Accedi alla mia carta</button>'
+        +'</div>';
       return;
     }
     initLanding(tok);return;
