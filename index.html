@@ -1732,33 +1732,32 @@ function closePWAModal(){
 // INIT
 // ════════════════════════════════════
 window.addEventListener('load', function() {
-  initPWA();
   loadCFG();
+  initPWA();
 
-  var p = new URLSearchParams(window.location.search);
+  var p   = new URLSearchParams(window.location.search);
   var tok = p.get('t');
   var cp  = p.get('c');
   var idp = p.get('id');
 
-  // STEP 1: decodifica sempre il parametro c= se presente
+  // Decodifica c= e salva dbUrl — sempre come primo passo
   if (cp) {
     try {
       var d = JSON.parse(atob(cp));
-      var dbUrl = d.u || null;
-      if (dbUrl && dbUrl.indexOf('https://') === 0) {
-        var savedPin = CFG.pin || null;
-        CFG = { dbUrl: dbUrl };
-        if (savedPin) CFG.pin = savedPin;
+      if (d.u && d.u.indexOf('https://') === 0) {
+        var pin = CFG.pin || null;
+        CFG = { dbUrl: d.u };
+        if (pin) CFG.pin = pin;
         localStorage.setItem('cf_cfg', JSON.stringify(CFG));
       }
     } catch(e) {}
   }
 
-  // STEP 2: se c'è un token QR, vai alla landing cliente — sempre
-  if (tok) {
+  // Caso A: arriva dal QR del barista (?t=TOKEN)
+  // → sempre landing cliente, mai setup
+  if (tok && cp) {
+    showView('view-cl');
     if (!CFG.dbUrl) {
-      // dbUrl ancora mancante — mostra schermata semplice senza tecnicismi
-      showView('view-cl');
       showClSub('cl-accedi');
       return;
     }
@@ -1766,7 +1765,7 @@ window.addEventListener('load', function() {
     return;
   }
 
-  // STEP 3: link personale ?c=...&id=...
+  // Caso B: link personale cliente (?c=...&id=...)
   if (cp && idp && CFG.dbUrl) {
     showView('view-cl');
     showClSub('cl-loading');
@@ -1775,7 +1774,7 @@ window.addEventListener('load', function() {
       if (c) {
         curCId = idp;
         localStorage.setItem('cf_id', idp);
-        localStorage.setItem('cf_email', c.email);
+        localStorage.setItem('cf_email', c.email || '');
         renderCartaCliente(c);
         showClSub('cl-carta');
         clTab('punti');
@@ -1786,10 +1785,10 @@ window.addEventListener('load', function() {
     return;
   }
 
-  // STEP 4: link con solo ?c= (senza id) — usa id da localStorage
+  // Caso C: link con ?c= ma senza id
   if (cp && CFG.dbUrl) {
-    var sid = localStorage.getItem('cf_id');
     showView('view-cl');
+    var sid = localStorage.getItem('cf_id');
     if (sid) {
       showClSub('cl-loading');
       binGet().then(function(bin) {
@@ -1809,33 +1808,13 @@ window.addEventListener('load', function() {
     return;
   }
 
-  // STEP 5: apertura diretta senza parametri
-  if (CFG.dbUrl) {
-    var sid2 = localStorage.getItem('cf_id');
-    if (sid2) {
-      // Cliente con id salvato — mostra la sua carta
-      showView('view-cl');
-      showClSub('cl-loading');
-      binGet().then(function(bin) {
-        var c = bin.clienti && bin.clienti[sid2];
-        if (c) {
-          curCId = sid2;
-          renderCartaCliente(c);
-          showClSub('cl-carta');
-          clTab('punti');
-        } else {
-          showView('view-mode');
-        }
-      }).catch(function() { showView('view-mode'); });
-      return;
-    }
-    // Nessun id salvato — schermata scelta modalità
-    showView('view-mode');
+  // Caso D: apertura diretta (barista o utente generico)
+  // NON mandare mai automaticamente alla carta — mostra sempre la scelta
+  if (!CFG.dbUrl) {
+    showView('view-setup');
     return;
   }
-
-  // STEP 6: nessuna configurazione — setup
-  showView('view-setup');
+  showView('view-mode');
 });
 
 </script>
