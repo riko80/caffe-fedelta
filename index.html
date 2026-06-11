@@ -125,12 +125,6 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
 .hist-pts.minus{color:var(--danger);}
 .hist-pts.neutral{color:var(--gold);}
 .empty{text-align:center;color:var(--muted);font-style:italic;font-size:14px;padding:18px 0;}
-.id-badge{display:inline-block;background:var(--espresso);color:var(--gold);font-family:monospace;font-size:11px;font-weight:bold;padding:2px 8px;border-radius:6px;margin-right:4px;}
-.id-big{font-family:monospace;font-size:26px;font-weight:bold;color:var(--gold);background:var(--espresso);padding:6px 16px;border-radius:10px;display:inline-block;}
-.search-wrap{position:relative;margin-bottom:12px;}
-.search-inp{width:100%;padding:10px 14px 10px 36px;border:1px solid var(--latte);border-radius:var(--rs);font-size:14px;font-family:'Georgia',serif;background:white;color:var(--text);outline:none;}
-.search-inp:focus{border-color:var(--crema);}
-.search-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;}
 
 /* PIN */
 .pin-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;padding:24px;}
@@ -256,7 +250,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <div style="background:var(--latte);border-radius:var(--rs);padding:11px;font-size:13px;color:var(--muted);font-style:italic;line-height:2;margin-bottom:12px;">
         1. <a href="https://console.firebase.google.com" target="_blank" style="color:var(--crema);">console.firebase.google.com</a> → crea progetto<br>
         2. <strong>Realtime Database</strong> → Crea database → modalità test<br>
-        3. Tab <strong>Regole</strong> → imposta <code>".read":true,".write":true</code> → Pubblica<br>
+        3. Tab <strong>Regole</strong> → pubblica con <code>.read:true .write:true</code><br>
         4. Copia l'URL (es: <code>https://mio-bar-rtdb.firebaseio.com</code>)
       </div>
       <label class="lbl">URL Firebase Realtime Database</label>
@@ -383,10 +377,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
   <!-- CLIENTI TAB -->
   <div class="page" id="bpage-clienti">
     <div class="hdr"><span class="cup">👥</span><h1>Clienti registrati</h1></div>
-    <div class="search-wrap">
-      <span class="search-ico">🔍</span>
-      <input class="search-inp" id="b-search" type="text" placeholder="Cerca per nome, cognome, email o ID..." oninput="filterClienti(this.value)">
-    </div>
+    <!-- Alert clienti con omaggio disponibile -->
     <div id="b-omaggi-alert" style="display:none;" class="alert alert-gold">
       <div class="ai">🎁</div>
       <p><strong>Omaggi disponibili</strong><span id="b-omaggi-nomi"></span></p>
@@ -432,10 +423,8 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     </div>
     <div class="card">
       <div style="background:var(--latte);border-radius:var(--rs);padding:11px 13px;margin-bottom:14px;font-size:13px;color:var(--muted);font-style:italic;line-height:1.6;">📱 La prossima volta ti riconosciamo automaticamente — niente password!</div>
-      <label class="lbl">Nome</label>
-      <input class="inp" id="r-nome" type="text" placeholder="es. Mario" autocomplete="given-name">
-      <label class="lbl">Cognome</label>
-      <input class="inp" id="r-cognome" type="text" placeholder="es. Rossi" autocomplete="family-name">
+      <label class="lbl">Come ti chiami?</label>
+      <input class="inp" id="r-nome" type="text" placeholder="Il tuo nome" autocomplete="given-name">
       <label class="lbl">La tua email</label>
       <input class="inp" id="r-email" type="email" placeholder="mario@email.com" autocomplete="email" inputmode="email">
       <label class="lbl">Scegli il tuo avatar</label>
@@ -525,11 +514,6 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
 
     <div id="cl-tab-punti" style="max-width:480px;margin:0 auto;padding:14px;">
       <div id="cl-carta-badge" class="ubadge"></div>
-      <div id="cl-id-box" style="display:none;text-align:center;margin-bottom:14px;background:var(--espresso);border-radius:var(--r);padding:14px;">
-        <div style="font-size:11px;color:rgba(255,255,255,.6);font-style:italic;margin-bottom:6px;">Il tuo numero tessera</div>
-        <div id="cl-id-num" class="id-big"></div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);font-style:italic;margin-top:6px;">Comunicalo al barista se non hai il telefono</div>
-      </div>
 
       <div class="alert alert-gold" id="cl-free-c" style="display:none;">
         <div class="ai">🎉</div>
@@ -672,22 +656,20 @@ let curCId=null, pendingToken=null;
 // ════════════════════════════════════
 // JSONBin
 // ════════════════════════════════════
-// Helper: assicura che ogni campo array del bin sia sempre un array
-function normBin(b){
-  if(!b)b={};
-  if(!b.clienti)b.clienti={};
-  if(!b.stats)b.stats={caffe:0,cap:0,omaggi:0,storia:[]};
-  if(!Array.isArray(b.stats.storia))b.stats.storia=[];
-  Object.values(b.clienti).forEach(c=>{
-    if(!Array.isArray(c.storia))c.storia=[];
-    if(!Array.isArray(c.notifiche))c.notifiche=[];
-  });
-  return b;
-}
 async function binGet(){
   const r=await fetch(CFG.dbUrl+'/caffe.json');
   if(!r.ok)throw new Error('DB '+r.status);
-  return normBin(await r.json());
+  const d=await r.json();
+  if(!d)return{token:'',tokenTs:0,request:null,clienti:{},stats:{caffe:0,cap:0,omaggi:0,storia:[]}};
+  // Assicura che tutti gli array esistano
+  if(!d.stats)d.stats={caffe:0,cap:0,omaggi:0,storia:[]};
+  if(!Array.isArray(d.stats.storia))d.stats.storia=[];
+  if(!d.clienti)d.clienti={};
+  Object.values(d.clienti).forEach(c=>{
+    if(!Array.isArray(c.storia))c.storia=[];
+    if(!Array.isArray(c.notifiche))c.notifiche=[];
+  });
+  return d;
 }
 async function binPut(d){
   const r=await fetch(CFG.dbUrl+'/caffe.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
@@ -703,18 +685,18 @@ function saveCFG(){localStorage.setItem('cf_cfg',JSON.stringify(CFG));}
 function resetSetup(){localStorage.removeItem('cf_cfg');loadCFG();showView('view-setup');}
 
 async function setupSave(){
-  const key=document.getElementById('s-key').value.trim();
+  const raw=document.getElementById('s-key').value.trim();
   const pin=document.getElementById('s-pin').value.trim();
   const err=document.getElementById('s-err');
-  const dbUrl=key.replace(/\/+$/,'');
-  if(!dbUrl.startsWith('https://')){err.textContent="URL non valido: incolla l'URL Firebase (es. https://mio-bar-rtdb.firebaseio.com)";err.style.display='block';return;}
+  const dbUrl=raw.replace(/\/+$/,'');
+  if(!dbUrl.startsWith('https://')){err.textContent="Incolla l'URL Firebase (es. https://mio-bar-rtdb.firebaseio.com)";err.style.display='block';return;}
   if(!pin||pin.length<4){err.textContent='PIN deve essere 4 cifre.';err.style.display='block';return;}
   err.style.display='none';
   const btn=document.getElementById('s-btn');btn.disabled=true;btn.textContent='⏳...';
   try{
     const init={token:'',tokenTs:0,request:null,clienti:{},stats:{caffe:0,cap:0,omaggi:0,storia:[]}};
     const res=await fetch(dbUrl+'/caffe.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(init)});
-    if(!res.ok){const t=await res.text();throw new Error(res.status+': '+t.slice(0,120));}
+    if(!res.ok){const t=await res.text();throw new Error(res.status+': '+t.slice(0,100));}
     CFG={dbUrl,pin};saveCFG();showView('view-mode');
   }catch(e){err.textContent='Errore: '+e.message;err.style.display='block';}
   btn.disabled=false;btn.textContent='✅ Salva e inizia';
@@ -769,14 +751,7 @@ async function startQRCycle(){
 
 async function pushTok(){
   curToken=genTok();
-  try{
-    const bin=await binGet();
-    bin.token=curToken;
-    bin.tokenTs=Date.now();
-    bin.request=null;
-    // NON azzerare lastApproval — il cliente potrebbe non averlo ancora letto
-    await binPut(bin);
-  }catch(e){setConn(false);}
+  try{const bin=await binGet();bin.token=curToken;bin.tokenTs=Date.now();bin.request=null;await binPut(bin);}catch(e){setConn(false);}
   renderQR(curToken);setConn(true);
   document.getElementById('approv-cons').classList.remove('show');
   document.getElementById('approv-riscatto').classList.remove('show');
@@ -862,36 +837,37 @@ async function approvaConsumo(){
       for(let i=0;i<aQty;i++){
         if(aDrink==='caffe'){c.puntiC=(c.puntiC||0)+1;c.totC=(c.totC||0)+1;}
         else{c.puntiK=(c.puntiK||0)+1;c.totK=(c.totK||0)+1;}
-        if(!Array.isArray(c.storia))c.storia=[];
-        c.storia.unshift({id:uid(),tipo:aDrink,delta:1,testo:(aDrink==='caffe'?'Caffe aggiunto':'Cappuccino aggiunto'),ts:Date.now()});
+        c.storia=c.storia||[];
+        c.storia.unshift({id:uid(),tipo:aDrink,delta:1,testo:(aDrink==='caffe'?'☕ Caffè aggiunto':'🥛 Cappuccino aggiunto'),ts:Date.now()});
       }
-      if(!Array.isArray(c.notifiche))c.notifiche=[];
-      pushNotif(c,'info','Il barista ha aggiunto '+aQty+' '+(aDrink==='caffe'?'caffe':'cappuccino')+' alla tua carta.','');
-      if(aDrink==='caffe'&&(c.puntiC||0)>=OM) pushNotif(c,'gold','Hai raggiunto 10 caffe! Hai diritto a un caffe gratuito.','');
-      if(aDrink==='cappuccino'&&(c.puntiK||0)>=OM) pushNotif(c,'gold','Hai raggiunto 10 cappuccini! Hai diritto a un cappuccino gratuito.','');
+      // Notifica al cliente
+      pushNotif(c,'info',`Il barista ha aggiunto ${aQty} ${nome} alla tua carta.`,'➕');
+      // Alert omaggio
+      if(aDrink==='caffe'&&(c.puntiC||0)>=OM) pushNotif(c,'gold','🎉 Hai raggiunto 10 caffè! Hai diritto a un caffè gratuito — chiedilo al barista.','🎁');
+      if(aDrink==='cappuccino'&&(c.puntiK||0)>=OM) pushNotif(c,'gold','🎉 Hai raggiunto 10 cappuccini! Hai diritto a un cappuccino gratuito — chiedilo al barista.','🎁');
     }
-    // Segnale per il cliente: campo top-level che pushTok NON tocca
-    bin.lastApproval={cid:cid,tipo:aDrink,qty:aQty,ts:Date.now(),denied:false};
+    // Scrive approval DENTRO il cliente — pushTok non lo toccherà mai
+    if(cid&&bin.clienti[cid]){
+      bin.clienti[cid].approvalPending={tipo:aDrink,qty:aQty,ts:Date.now()};
+    }
     bin.request=null;
-    if(!Array.isArray(bin.stats.storia))bin.stats.storia=[];
-    if(aDrink==='caffe')bin.stats.caffe=(bin.stats.caffe||0)+aQty;
-    else bin.stats.cap=(bin.stats.cap||0)+aQty;
-    for(let i=0;i<aQty;i++)bin.stats.storia.unshift({tipo:aDrink,ts:Date.now()});
+    if(aDrink==='caffe')bin.stats.caffe+=aQty;else bin.stats.cap+=aQty;
+    if(!Array.isArray(bin.stats.storia))bin.stats.storia=[];for(let i=0;i<aQty;i++)bin.stats.storia.unshift({tipo:aDrink,ts:Date.now()});
     await binPut(bin);
     document.getElementById('approv-cons').classList.remove('show');
-    showToast('✅ '+aQty+' '+(aDrink==='caffe'?'caffe':'cappuccino')+' approvato!');
+    showToast('✅ '+aQty+' '+(aDrink==='caffe'?'caffè':'cappuccino')+' approvato!');
+    bin.lastApproval={cid:cid,tipo:aDrink,qty:aQty,ts:Date.now(),denied:false};
     updBStats();
-    // Rinnova QR dopo 8s — dà tempo al cliente di leggere lastApproval
     setTimeout(()=>forceQR(),8000);
-  }catch(e){showToast("Errore: "+e.message);}
+  }catch(e){showToast('❌ Errore: '+e.message);}
 }
 
 async function rifiutaConsumo(){
   try{
     const bin=await binGet();
     const req=bin.request;
-    const cid=req&&req.clienteId;
-    bin.lastApproval={cid:cid||null,denied:true,ts:Date.now()};
+    const _cid=req&&req.clienteId;
+    bin.lastApproval={cid:_cid||null,denied:true,ts:Date.now()};
     bin.request=null;
     await binPut(bin);
     document.getElementById('approv-cons').classList.remove('show');
@@ -927,7 +903,7 @@ async function approvaRiscatto(){
     bin.riscattoReq=null;
     bin.riscattoApproval={approvato:true,tipo,ts:Date.now()};
     bin.stats.omaggi=(bin.stats.omaggi||0)+1;
-    bin.stats.storia.unshift({tipo:'omaggio-'+tipo,ts:Date.now()});
+    if(!Array.isArray(bin.stats.storia))bin.stats.storia=[];bin.stats.storia.unshift({tipo:'omaggio-'+tipo,ts:Date.now()});
     await binPut(bin);
     document.getElementById('approv-riscatto').classList.remove('show');
     showToast('🎁 Omaggio '+nome+' approvato!');
@@ -962,7 +938,7 @@ async function apriScheda(cid){
   try{
     const bin=await binGet();
     const c=bin.clienti[cid];if(!c){document.getElementById('scheda-body').innerHTML='<p class="empty">Cliente non trovato.</p>';return;}
-    // scheda-nav-name ora impostato dentro renderScheda
+    document.getElementById('scheda-nav-name').textContent=c.avatar+' '+c.nome;
     renderScheda(bin,cid);
   }catch(e){document.getElementById('scheda-body').innerHTML='<p class="empty">Errore caricamento.</p>';}
 }
@@ -971,22 +947,10 @@ function renderScheda(bin,cid){
   const c=bin.clienti[cid];
   const pC=c.puntiC||0,pK=c.puntiK||0;
   const hasFreeC=pC>=OM,hasFreeK=pK>=OM;
-  const idStr=c.numId?String(c.numId).padStart(4,'0'):'—';
-  const nomeC=((c.nome||'')+' '+(c.cognome||'')).trim();
-  document.getElementById('scheda-nav-name').textContent=(c.avatar||'')+ ' '+nomeC;
   let html=`
-  <div class="card" style="margin-bottom:14px;">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-      <span style="font-size:34px;">${c.avatar||'😊'}</span>
-      <div style="flex:1;">
-        <div style="font-size:17px;color:var(--espresso);">${nomeC}</div>
-        <div style="font-size:12px;color:var(--muted);font-style:italic;">${c.email||''}</div>
-      </div>
-    </div>
-    <div style="text-align:center;background:var(--espresso);border-radius:var(--rs);padding:10px;">
-      <div style="font-size:11px;color:rgba(255,255,255,.6);font-style:italic;margin-bottom:4px;">Numero tessera</div>
-      <div class="id-big">${idStr}</div>
-    </div>
+  <div class="ubadge" style="margin-bottom:14px;">
+    <span class="uav">${c.avatar}</span>
+    <div><div class="uname">${c.nome}</div><div class="usub">${c.email}</div></div>
   </div>`;
 
   if(hasFreeC||hasFreeK){
@@ -1119,43 +1083,13 @@ async function approvaOmaggioScheda(cid,tipo){
     c.riscattoApprovalPending={approvato:true,tipo,ts:Date.now()};
     c.riscattoReq=null;
     bin.stats.omaggi=(bin.stats.omaggi||0)+1;
-    bin.stats.storia.unshift({tipo:'omaggio-'+tipo,ts:Date.now()});
+    if(!Array.isArray(bin.stats.storia))bin.stats.storia=[];bin.stats.storia.unshift({tipo:'omaggio-'+tipo,ts:Date.now()});
     await binPut(bin);
     showToast('🎁 Omaggio '+nome+' approvato e tessera azzerata!');
     renderScheda(bin,cid);
   }catch(e){showToast('❌ Errore');}
 }
 
-function renderClientiList(clienti){
-  const cl=document.getElementById('clienti-list');
-  if(!clienti||!clienti.length){cl.innerHTML='<p class="empty">Nessun cliente trovato.</p>';return;}
-  cl.innerHTML=clienti.map(c=>{
-    const pC=c.puntiC||0,pK=c.puntiK||0;
-    const hasOM=(pC>=OM)||(pK>=OM);
-    const unread=(c.notifiche||[]).filter(n=>!n.letta).length;
-    const idStr=c.numId?String(c.numId).padStart(4,'0'):'';
-    const nc=((c.nome||'')+' '+(c.cognome||'')).trim();
-    return '<div class="client-row" onclick="apriScheda(''+c.id+'')">'
-      +'<span class="cr-av">'+(c.avatar||'😊')+'</span>'
-      +'<div class="cr-info">'
-      +'<div class="cr-name">'+(idStr?'<span class="id-badge">'+idStr+'</span> ':'')+nc+(hasOM?'<span class="cr-alert-dot"></span>':'')+'</div>'
-      +'<div class="cr-sub">'+(c.email||'')+'</div>'
-      +'</div>'
-      +'<div class="cr-pts">'
-      +'<div class="cr-badge">☕'+pC+'/10 · 🥛'+pK+'/10</div>'
-      +'<div class="cr-sub2">🎁'+(c.totOmaggi||0)+(unread?' · 🔔'+unread:'')+'</div>'
-      +'</div></div>';
-  }).join('');
-}
-function filterClienti(q){
-  if(!window._allClienti)return;
-  const s=q.trim().toLowerCase();
-  if(!s){renderClientiList(window._allClienti);return;}
-  renderClientiList(window._allClienti.filter(c=>{
-    const id=c.numId?String(c.numId):'';
-    return id.includes(s)||(c.nome||'').toLowerCase().includes(s)||(c.cognome||'').toLowerCase().includes(s)||(c.email||'').toLowerCase().includes(s);
-  }));
-}
 async function updBStats(){
   try{
     const bin=await binGet();const s=bin.stats||{};
@@ -1177,9 +1111,23 @@ async function updBStats(){
     const cl=document.getElementById('clienti-list');
     checkOmaggiAlert(bin);
     if(!clienti.length){cl.innerHTML='<p class="empty">Nessun cliente registrato.</p>';return;}
-    clienti.sort((a,b)=>(a.numId||9999)-(b.numId||9999));
-    window._allClienti=clienti;
-    renderClientiList(clienti);
+    clienti.sort((a,b)=>((b.totC||0)+(b.totK||0))-((a.totC||0)+(a.totK||0)));
+    cl.innerHTML=clienti.map(c=>{
+      const pC=c.puntiC||0,pK=c.puntiK||0;
+      const hasOM=(pC>=OM)||(pK>=OM);
+      const unread=(c.notifiche||[]).filter(n=>!n.letta).length;
+      return `<div class="client-row" onclick="apriScheda('${c.id}')">
+        <span class="cr-av">${c.avatar}</span>
+        <div class="cr-info">
+          <div class="cr-name">${c.nome}${hasOM?'<span class="cr-alert-dot"></span>':''}</div>
+          <div class="cr-sub">${c.email}</div>
+        </div>
+        <div class="cr-pts">
+          <div class="cr-badge">☕${pC}/10 · 🥛${pK}/10</div>
+          <div class="cr-sub2">🎁${c.totOmaggi||0} omaggi${unread?' · 🔔'+unread:''}</div>
+        </div>
+      </div>`;
+    }).join('');
   }catch(e){}
 }
 
@@ -1203,20 +1151,7 @@ async function initLanding(token){
     const bin=await binGet();
     const age=(Date.now()-(bin.tokenTs||0))/1000;
     if(bin.token!==token||age>QR_TTL+5){
-      // QR scaduto: se l'utente ha già un account, mostra la carta
-      // altrimenti mostra registrazione con messaggio gentile
-      const savedId2=localStorage.getItem('cf_id');
-      if(savedId2&&bin.clienti&&bin.clienti[savedId2]){
-        curCId=savedId2;
-        renderCartaCliente(bin.clienti[savedId2]);
-        showClSub('cl-carta');
-        clTab('punti');
-        showToast('QR scaduto — ecco la tua carta');
-      } else {
-        // Prima volta: mostra registrazione con nota gentile
-        showRegistration(localStorage.getItem('cf_email')||'');
-        showToast('QR scaduto. Registrati comunque!');
-      }
+      document.getElementById('cl-loading').innerHTML='<div style="font-size:44px;margin-bottom:11px;">⏰</div><p style="font-size:15px;color:var(--danger);">QR scaduto.<br>Chiedi al barista un nuovo codice.</p>';
       return;
     }
     if(savedId&&bin.clienti&&bin.clienti[savedId]){curCId=savedId;await sendRequest(bin,savedId);}
@@ -1228,31 +1163,6 @@ async function initLanding(token){
   }catch(e){document.getElementById('cl-loading').innerHTML='<div style="font-size:44px;">❌</div><p style="font-size:14px;color:var(--danger);margin-top:11px;">Errore di connessione.<br>Riprova.</p>';showClSub('cl-loading');}
 }
 
-async function fallbackLogin(){
-  const email=(document.getElementById('fallback-email')?.value||'').trim().toLowerCase();
-  if(!email||!email.includes('@')){showToast('Inserisci la tua email');return;}
-  if(!CFG.dbUrl){showToast('Configurazione mancante. Scansiona il QR del barista.');return;}
-  showClSub('cl-loading');
-  try{
-    const bin=await binGet();
-    const found=Object.values(bin.clienti||{}).find(c=>c.email===email);
-    if(!found){
-      document.getElementById('cl-loading').innerHTML=
-        '<div style="font-size:44px;margin-bottom:11px;">😕</div>'
-        +'<p style="font-size:14px;color:var(--muted);font-style:italic;">Email non trovata.<br>Chiedil al barista il link o scansiona il QR aggiornato.</p>';
-      return;
-    }
-    curCId=found.id;
-    localStorage.setItem('cf_id',found.id);
-    localStorage.setItem('cf_email',email);
-    renderCartaCliente(found);
-    showClSub('cl-carta');
-    clTab('punti');
-  }catch(e){
-    document.getElementById('cl-loading').innerHTML='<div style="font-size:44px;">❌</div><p style="font-size:14px;color:var(--danger);margin-top:11px;">Errore connessione.<br>Riprova.</p>';
-  }
-}
-
 function showRegistration(pre){
   const g=document.getElementById('r-avatars');g.innerHTML='';
   AVATARS.forEach((av,i)=>{const b=document.createElement('button');b.className='av-btn';b.textContent=av;b.onclick=()=>{document.querySelectorAll('.av-btn').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');};if(i===0)b.classList.add('sel');g.appendChild(b);});
@@ -1262,7 +1172,6 @@ function showRegistration(pre){
 
 async function registerCliente(){
   const nome=document.getElementById('r-nome').value.trim();
-  const cognome=(document.getElementById('r-cognome')?.value||'').trim();
   const email=document.getElementById('r-email').value.trim().toLowerCase();
   const av=document.querySelector('.av-btn.sel')?.textContent||'😊';
   const err=document.getElementById('r-err');
@@ -1274,11 +1183,8 @@ async function registerCliente(){
     const bin=await binGet();
     const existing=Object.values(bin.clienti||{}).find(c=>c.email===email);
     if(existing){curCId=existing.id;localStorage.setItem('cf_id',existing.id);localStorage.setItem('cf_email',email);await sendRequest(bin,existing.id);return;}
-    // Genera ID numerico progressivo
-    const nums=Object.values(bin.clienti||{}).map(c=>c.numId||0);
-    const numId=(nums.length>0?Math.max(...nums):0)+1;
     const id='c'+Date.now().toString(36);
-    const newC={id,numId,nome,cognome,email,avatar:av,puntiC:0,puntiK:0,totC:0,totK:0,totOmaggi:0,storia:[],notifiche:[],registrato:Date.now()};
+    const newC={id,nome,email,avatar:av,puntiC:0,puntiK:0,totC:0,totK:0,totOmaggi:0,storia:[],notifiche:[],registrato:Date.now()};
     bin.clienti=bin.clienti||{};bin.clienti[id]=newC;
     curCId=id;localStorage.setItem('cf_id',id);localStorage.setItem('cf_email',email);
     await sendRequest(bin,id);
@@ -1320,12 +1226,14 @@ function startCPoll(cid){
 
   cPollTimer=setInterval(async()=>{
     if(!active)return;
+    // Aggiorna timer visivo
     secs=Math.max(0,secs-2);
     const wEl=document.getElementById('cl-wsecs');
     const wBar=document.getElementById('cl-wbar');
     if(wEl)wEl.textContent=secs;
     if(wBar)wBar.style.width=Math.round((secs/60)*100)+'%';
 
+    // Timeout
     if(secs<=0){
       active=false;clearInterval(cPollTimer);cPollTimer=null;
       const ld=document.getElementById('cl-loading');
@@ -1333,32 +1241,25 @@ function startCPoll(cid){
       showClSub('cl-loading');return;
     }
 
+    // Leggi il bin
     try{
       const bin=await binGet();
       if(!active)return;
-
-      // Legge lastApproval — campo top-level, NON viene azzerato da pushTok
       const la=bin.lastApproval;
-      if(!la||la.cid!==cid)return;            // non per me
-      if((Date.now()-la.ts)>120000)return;     // troppo vecchio
+      if(!la||la.cid!==cid||(Date.now()-la.ts)>90000)return;
 
-      // Trovata risposta
       active=false;clearInterval(cPollTimer);cPollTimer=null;
-
-      // Cancella lastApproval e salva
-      bin.lastApproval=null;
-      binPut(bin).catch(()=>{});
+      bin.lastApproval=null;binPut(bin).catch(()=>{});
 
       if(la.denied){showClSub('cl-deny');return;}
 
-      const c=bin.clienti&&bin.clienti[cid];
-      if(!c){showClSub('cl-accedi');return;}
-
       const{tipo,qty}=la;
       curCId=cid;
-      const mancano=tipo==='caffe'?Math.max(0,OM-(c.puntiC||0)):Math.max(0,OM-(c.puntiK||0));
-      const nomeT=tipo==='caffe'?'caffe':'cappuccin'+(qty===1?'o':'i');
-      const nomeO=tipo==='caffe'?'caffe':'cappuccino';
+      const mancanoC=Math.max(0,OM-(c.puntiC||0));
+      const mancanoK=Math.max(0,OM-(c.puntiK||0));
+      const mancano=tipo==='caffe'?mancanoC:mancanoK;
+      const nomeT=tipo==='caffe'?'caffè':'cappuccin'+(qty===1?'o':'i');
+      const nomeO=tipo==='caffe'?'caffè':'cappuccino';
 
       try{window.history.replaceState(null,'',getLinkP());}catch(ex){}
       renderCartaCliente(c);
@@ -1366,10 +1267,10 @@ function startCPoll(cid){
       clTab('punti');
 
       const msg=mancano===0
-        ?'+'+qty+' '+nomeT+' aggiunti! Hai diritto a un '+nomeO+' GRATIS!'
-        :'+'+qty+' '+nomeT+' aggiunti! Mancano ancora '+mancano+' per il prossimo omaggio.';
+        ?'🎉 +'+qty+' '+nomeT+' aggiunti! Hai diritto a un '+nomeO+' GRATIS — chiedilo al barista!'
+        :'✅ +'+qty+' '+nomeT+' aggiunti alla tua carta! Ti mancano ancora '+mancano+' '+nomeT+' per il prossimo omaggio.';
       showBigToast(msg);
-    }catch(e){/* rete, riprova */}
+    }catch(e){/* rete, riprova al prossimo tick */}
   },2000);
 }
 // ════════════════════════════════════
@@ -1439,11 +1340,6 @@ function showClCarta(){
 
 function renderCartaCliente(c){
   renderUBadge('cl-carta-badge',c);
-  // Mostra sempre il box ID (anche per clienti vecchi senza numId)
-  const ib=document.getElementById('cl-id-box');
-  const in2=document.getElementById('cl-id-num');
-  if(ib)ib.style.display='block';
-  if(in2)in2.textContent=c.numId?String(c.numId).padStart(4,'0'):'—';
   const pC=c.puntiC||0,pK=c.puntiK||0;
   document.getElementById('cl-nc').textContent=c.totC||0;
   document.getElementById('cl-nk').textContent=c.totK||0;
@@ -1561,9 +1457,7 @@ function buildNotifiche(notifiche,c){
 
 function renderUBadge(elId,c){
   const el=document.getElementById(elId);if(!el)return;
-  const idStr=c.numId?String(c.numId).padStart(4,'0'):'';
-  const nc=(c.nome||'')+' '+(c.cognome||'');
-  el.innerHTML='<span class="uav">'+(c.avatar||'😊')+'</span><div style="flex:1;"><div class="uname">'+(idStr?'<span class="id-badge">'+idStr+'</span> ':'')+nc.trim()+'</div><div class="usub">'+(c.email||'')+'</div></div><button class="uout" onclick="logoutCliente()">Cambia</button>';
+  el.innerHTML=`<span class="uav">${c.avatar||'😊'}</span><div><div class="uname">${c.nome}</div><div class="usub">${c.email}</div></div><button class="uout" onclick="logoutCliente()">Cambia</button>`;
 }
 
 function logoutCliente(){localStorage.removeItem('cf_id');localStorage.removeItem('cf_email');curCId=null;showView('view-mode');}
@@ -1731,92 +1625,73 @@ function closePWAModal(){
 // ════════════════════════════════════
 // INIT
 // ════════════════════════════════════
-window.addEventListener('load', function() {
-  loadCFG();
+window.addEventListener('load',()=>{
   initPWA();
+  loadCFG();
+  const p=new URLSearchParams(window.location.search);
+  const tok=p.get('t'), cp=p.get('c'), idp=p.get('id'), home=p.get('home');
 
-  var p   = new URLSearchParams(window.location.search);
-  var tok = p.get('t');
-  var cp  = p.get('c');
-  var idp = p.get('id');
-
-  // Decodifica c= e salva dbUrl — sempre come primo passo
-  if (cp) {
-    try {
-      var d = JSON.parse(atob(cp));
-      if (d.u && d.u.indexOf('https://') === 0) {
-        var pin = CFG.pin || null;
-        CFG = { dbUrl: d.u };
-        if (pin) CFG.pin = pin;
-        localStorage.setItem('cf_cfg', JSON.stringify(CFG));
-      }
-    } catch(e) {}
-  }
-
-  // Caso A: arriva dal QR del barista (?t=TOKEN)
-  // → sempre landing cliente, mai setup
-  if (tok && cp) {
-    showView('view-cl');
-    if (!CFG.dbUrl) {
-      showClSub('cl-accedi');
-      return;
+  // Decodifica config dall'URL se presente
+  if(cp){try{
+    const d=JSON.parse(atob(cp));
+    if(d.u&&d.u.startsWith('https://')){
+      const savedPin=CFG.pin||null;
+      CFG={dbUrl:d.u};
+      if(savedPin)CFG.pin=savedPin;
+      localStorage.setItem('cf_cfg',JSON.stringify(CFG));
     }
-    initLanding(tok);
-    return;
-  }
+  }catch(e){}}
 
-  // Caso B: link personale cliente (?c=...&id=...)
-  if (cp && idp && CFG.dbUrl) {
-    showView('view-cl');
-    showClSub('cl-loading');
-    binGet().then(function(bin) {
-      var c = bin.clienti && bin.clienti[idp];
-      if (c) {
-        curCId = idp;
-        localStorage.setItem('cf_id', idp);
-        localStorage.setItem('cf_email', c.email || '');
-        renderCartaCliente(c);
-        showClSub('cl-carta');
-        clTab('punti');
-      } else {
-        showClSub('cl-accedi');
+  // CASO: aperto dall'icona PWA (?home=1) o accesso diretto senza token
+  // → vai sempre alla carta cliente se l'id è salvato, mai al "QR scaduto"
+  if(home||(!tok&&!cp&&!idp)){
+    if(CFG.dbUrl){
+      const sid=localStorage.getItem('cf_id');
+      if(sid){
+        showView('view-cl');showClSub('cl-loading');
+        binGet().then(bin=>{
+          const c=bin.clienti&&bin.clienti[sid];
+          if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+          else{showView('view-mode');}
+        }).catch(()=>{showView('view-mode');});
+        return;
       }
-    }).catch(function() { showClSub('cl-accedi'); });
-    return;
-  }
-
-  // Caso C: link con ?c= ma senza id
-  if (cp && CFG.dbUrl) {
-    showView('view-cl');
-    var sid = localStorage.getItem('cf_id');
-    if (sid) {
-      showClSub('cl-loading');
-      binGet().then(function(bin) {
-        var c = bin.clienti && bin.clienti[sid];
-        if (c) {
-          curCId = sid;
-          renderCartaCliente(c);
-          showClSub('cl-carta');
-          clTab('punti');
-        } else {
-          showClSub('cl-accedi');
-        }
-      }).catch(function() { showClSub('cl-accedi'); });
-    } else {
-      showClSub('cl-accedi');
     }
+    if(!CFG.dbUrl){showView('view-setup');return;}
+    showView('view-mode');
     return;
   }
 
-  // Caso D: apertura diretta (barista o utente generico)
-  // NON mandare mai automaticamente alla carta — mostra sempre la scelta
-  if (!CFG.dbUrl) {
-    showView('view-setup');
+  // CASO: ?t=TOKEN → scansione QR fresca — mai mostrare setup al cliente
+  if(tok){
+    showView('view-cl');
+    if(!CFG.dbUrl){showClSub('cl-accedi');return;}
+    initLanding(tok);return;
+  }
+
+  // CASO: ?c=...&id=... → link personale con id esplicito
+  if(cp&&idp&&CFG.dbUrl){
+    showView('view-cl');showClSub('cl-loading');
+    binGet().then(bin=>{
+      const c=bin.clienti&&bin.clienti[idp];
+      if(c){curCId=idp;localStorage.setItem('cf_id',idp);localStorage.setItem('cf_email',c.email);renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+      else showClSub('cl-accedi');
+    }).catch(()=>showClSub('cl-accedi'));
     return;
   }
+
+  // CASO: ?c=... senza id → cerca da localStorage o chiedi email
+  if(cp&&CFG.dbUrl){
+    const sid=localStorage.getItem('cf_id');
+    showView('view-cl');
+    if(sid){showClSub('cl-loading');binGet().then(bin=>{const c=bin.clienti&&bin.clienti[sid];if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}else showClSub('cl-accedi');}).catch(()=>showClSub('cl-accedi'));}
+    else showClSub('cl-accedi');
+    return;
+  }
+
+  if(!CFG.dbUrl){showView('view-setup');return;}
   showView('view-mode');
 });
-
 </script>
 </body>
 </html>
