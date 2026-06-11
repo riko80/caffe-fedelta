@@ -267,6 +267,21 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <p id="s-err" style="color:var(--danger);font-size:12px;font-style:italic;margin-top:3px;display:none;"></p>
     </div>
   </div>
+
+    <div id="cl-tab-profilo" style="max-width:480px;margin:0 auto;padding:14px;display:none;">
+      <div class="card">
+        <h2 style="margin-bottom:14px;">✏️ Modifica il tuo profilo</h2>
+        <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:14px;line-height:1.6;">Puoi correggere nome, cognome o email. Il numero tessera non è modificabile.</p>
+        <label class="lbl">Nome</label>
+        <input class="inp" id="prof-nome" type="text" autocomplete="given-name">
+        <label class="lbl">Cognome</label>
+        <input class="inp" id="prof-cognome" type="text" autocomplete="family-name">
+        <label class="lbl">Email</label>
+        <input class="inp" id="prof-email" type="email" autocomplete="email">
+        <button class="btn btn-dark" onclick="salvaProfilo()">💾 Salva modifiche</button>
+        <p id="prof-msg" style="font-size:13px;text-align:center;margin-top:6px;display:none;"></p>
+      </div>
+    </div>
 </div>
 
 <!-- ═══════ MODE ═══════ -->
@@ -526,6 +541,10 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <button class="nav-btn" onclick="clTab('storico')" id="cln-storico">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
         Storico
+      </button>
+      <button class="nav-btn" onclick="clTab('profilo')" id="cln-profilo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        Profilo
       </button>
     </nav>
 
@@ -1009,6 +1028,32 @@ function renderScheda(bin,cid){
     </div>
   </div>`;
 
+  // Anagrafica modificabile
+  const idStr2=c.numId?String(c.numId).padStart(4,'0'):'—';
+  const nc2=((c.nome||'')+' '+(c.cognome||'')).trim();
+  html+=`<div class="card" style="margin-bottom:14px;">
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:11px;">
+      <span style="font-size:32px;">${c.avatar||'😊'}</span>
+      <div style="flex:1;">
+        <div style="font-size:16px;color:var(--espresso);">${nc2}</div>
+        <div style="font-size:12px;color:var(--muted);font-style:italic;">${c.email||''}</div>
+      </div>
+    </div>
+    <div style="text-align:center;background:var(--espresso);border-radius:var(--rs);padding:8px;margin-bottom:12px;">
+      <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;">Numero tessera</div>
+      <div class="id-big">${idStr2}</div>
+    </div>
+    <h2 style="margin-bottom:10px;">✏️ Modifica anagrafica</h2>
+    <label class="lbl">Nome</label>
+    <input class="inp" id="sch-nome" value="${c.nome||''}">
+    <label class="lbl">Cognome</label>
+    <input class="inp" id="sch-cognome" value="${c.cognome||''}">
+    <label class="lbl">Email</label>
+    <input class="inp" id="sch-email" type="email" value="${c.email||''}">
+    <button class="btn btn-dark" style="margin-top:4px;" onclick="salvaAnagraficaBarista('${cid}')">💾 Salva anagrafica</button>
+    <p id="sch-msg" style="font-size:13px;text-align:center;margin-top:4px;display:none;"></p>
+  </div>`;
+
   // Modifica manuale punti
   html+=`<div class="card">
     <h2>✏️ Modifica manuale punti</h2>
@@ -1043,6 +1088,33 @@ function renderScheda(bin,cid){
   html+='</div>';
 
   document.getElementById('scheda-body').innerHTML=html;
+}
+
+async function salvaAnagraficaBarista(cid){
+  const nome=(document.getElementById('sch-nome')?.value||'').trim();
+  const cognome=(document.getElementById('sch-cognome')?.value||'').trim();
+  const email=(document.getElementById('sch-email')?.value||'').trim().toLowerCase();
+  const msg=document.getElementById('sch-msg');
+  if(!nome){msg.textContent='Il nome non può essere vuoto.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  if(!email||!email.includes('@')){msg.textContent='Email non valida.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  msg.textContent='Salvataggio...';msg.style.color='var(--muted)';msg.style.display='block';
+  try{
+    const bin=await binGet();
+    const c=bin.clienti&&bin.clienti[cid];
+    if(!c){msg.textContent='Cliente non trovato.';msg.style.color='var(--danger)';return;}
+    if(email!==c.email){
+      const dup=Object.values(bin.clienti).find(x=>x.id!==cid&&x.email===email);
+      if(dup){msg.textContent='Email già usata da un altro account.';msg.style.color='var(--danger)';return;}
+    }
+    c.nome=nome;c.cognome=cognome;c.email=email;
+    await binPut(bin);
+    msg.textContent='✅ Salvato!';msg.style.color='var(--success)';
+    // Aggiorna nome nel titolo nav
+    const nc=((nome)+' '+(cognome)).trim();
+    const navEl=document.getElementById('scheda-nav-name');
+    if(navEl)navEl.textContent=(c.avatar||'')+' '+nc;
+    setTimeout(()=>{msg.style.display='none';},3000);
+  }catch(e){msg.textContent='Errore: '+e.message;msg.style.color='var(--danger)';}
 }
 
 async function modPunti(cid,tipo,delta){
@@ -1532,17 +1604,53 @@ function renderUBadge(elId,c){
 function logoutCliente(){localStorage.removeItem('cf_id');localStorage.removeItem('cf_email');curCId=null;showView('view-mode');}
 
 function clTab(t){
-  ['punti','notifiche','storico'].forEach(s=>{
+  ['punti','notifiche','storico','profilo'].forEach(s=>{
     document.getElementById('cl-tab-'+s).style.display=s===t?'block':'none';
     document.getElementById('cln-'+s).classList.toggle('active',s===t);
   });
   if(t==='storico'&&curCId){binGet().then(bin=>{const c=bin.clienti[curCId];if(c)buildHistCliente(c.storia||[]);}).catch(()=>{});}
   if(t==='notifiche'&&curCId){binGet().then(bin=>{const c=bin.clienti[curCId];if(c)buildNotifiche(c.notifiche||[],c);}).catch(()=>{});}
+  if(t==='profilo'&&curCId){
+    binGet().then(bin=>{
+      const c=bin.clienti&&bin.clienti[curCId];if(!c)return;
+      document.getElementById('prof-nome').value=c.nome||'';
+      document.getElementById('prof-cognome').value=c.cognome||'';
+      document.getElementById('prof-email').value=c.email||'';
+      document.getElementById('prof-msg').style.display='none';
+    }).catch(()=>{});
+  }
 }
 
 // ════════════════════════════════════
 // UTILS
 // ════════════════════════════════════
+async function salvaProfilo(){
+  if(!curCId){showToast('Errore: nessun cliente selezionato');return;}
+  const nome=document.getElementById('prof-nome').value.trim();
+  const cognome=document.getElementById('prof-cognome').value.trim();
+  const email=document.getElementById('prof-email').value.trim().toLowerCase();
+  const msg=document.getElementById('prof-msg');
+  if(!nome){msg.textContent='Il nome non può essere vuoto.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  if(!email||!email.includes('@')){msg.textContent='Email non valida.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  msg.textContent='Salvataggio...';msg.style.color='var(--muted)';msg.style.display='block';
+  try{
+    const bin=await binGet();
+    const c=bin.clienti&&bin.clienti[curCId];
+    if(!c){msg.textContent='Errore: cliente non trovato.';msg.style.color='var(--danger)';return;}
+    // Controlla che la nuova email non sia già usata da un altro cliente
+    if(email!==c.email){
+      const dup=Object.values(bin.clienti).find(x=>x.id!==curCId&&x.email===email);
+      if(dup){msg.textContent='Email già usata da un altro account.';msg.style.color='var(--danger)';return;}
+    }
+    c.nome=nome;c.cognome=cognome;c.email=email;
+    await binPut(bin);
+    localStorage.setItem('cf_email',email);
+    renderUBadge('cl-carta-badge',c);
+    msg.textContent='✅ Profilo aggiornato!';msg.style.color='var(--success)';
+    setTimeout(()=>{msg.style.display='none';},3000);
+  }catch(e){msg.textContent='Errore: '+e.message;msg.style.color='var(--danger)';}
+}
+
 function getLinkP(){
   const base=window.location.href.split('?')[0];
   const payload=btoa(JSON.stringify({u:CFG.dbUrl}));
