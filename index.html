@@ -812,7 +812,14 @@ async function startQRCycle(){
 
 async function pushTok(){
   curToken=genTok();
-  try{const bin=await binGet();bin.token=curToken;bin.tokenTs=Date.now();bin.request=null;await binPut(bin);}catch(e){setConn(false);}
+  try{
+    const bin=await binGet();
+    bin.token=curToken;
+    bin.tokenTs=Date.now();
+    // Non azzerare request se è arrivata da meno di 90 secondi
+    if(bin.request&&(Date.now()-bin.request.ts)>90000)bin.request=null;
+    await binPut(bin);
+  }catch(e){setConn(false);}
   renderQR(curToken);setConn(true);
   document.getElementById('approv-cons').classList.remove('show');
   document.getElementById('approv-riscatto').classList.remove('show');
@@ -838,9 +845,12 @@ function startBPoll(){
     try{
       const bin=await binGet();setConn(true);
       // Richiesta consumazione
-      if(bin.request&&bin.request.token===curToken){
-        const c=bin.clienti&&bin.request.clienteId?bin.clienti[bin.request.clienteId]:null;
-        const who=c?`${c.avatar} ${c.nome} (☕${c.puntiC||0}/10 · 🥛${c.puntiK||0}/10)`:'Cliente';
+      // Mostra richiesta se recente (90s) — indipendentemente dal token QR
+      // Questo permette al cliente lento di registrarsi anche dopo la scadenza del QR
+      if(bin.request&&bin.request.clienteId&&(Date.now()-bin.request.ts)<90000){
+        const c=bin.clienti&&bin.clienti[bin.request.clienteId];
+        const nc=c?((c.nome||'')+' '+(c.cognome||'')).trim():'';
+        const who=c?(c.avatar+' '+nc+' (☕'+(c.puntiC||0)+'/10 · 🥛'+(c.puntiK||0)+'/10)'):'Cliente';
         document.getElementById('approv-who').textContent='👤 '+who+' — scegli la consumazione';
         document.getElementById('approv-cons').classList.add('show');
         bTab('qr');
@@ -1062,6 +1072,13 @@ function renderScheda(bin,cid){
     <label class="lbl">Email</label>
     <input class="inp" id="sch-email" type="email" value="${c.email||''}">
     <button class="btn btn-dark" style="margin-top:4px;" onclick="salvaAnagraficaBarista('${cid}')">💾 Salva anagrafica</button>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--latte);">
+      <h2 style="margin-bottom:8px;">🔑 Reset PIN cliente</h2>
+      <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px;line-height:1.5;">Imposta un nuovo PIN per il cliente (4 cifre). Comunicaglielo di persona.</p>
+      <input class="inp" id="sch-pin" type="tel" maxlength="4" inputmode="numeric" placeholder="Nuovo PIN (4 cifre)" style="margin-bottom:8px;">
+      <button class="btn btn-ghost" onclick="resetPinCliente('${cid}')">🔑 Imposta nuovo PIN</button>
+      <p id="sch-pin-msg" style="font-size:13px;text-align:center;margin-top:4px;display:none;"></p>
+    </div>
     <p id="sch-msg" style="font-size:13px;text-align:center;margin-top:4px;display:none;"></p>
   </div>`;
 
@@ -1099,6 +1116,28 @@ function renderScheda(bin,cid){
   html+='</div>';
 
   document.getElementById('scheda-body').innerHTML=html;
+}
+
+async function resetPinCliente(cid){
+  const pinVal=(document.getElementById('sch-pin')?.value||'').trim();
+  const msg=document.getElementById('sch-pin-msg');
+  if(!pinVal||pinVal.length!==4||!/^\d{4}$/.test(pinVal)){
+    msg.textContent='Il PIN deve essere esattamente 4 cifre numeriche.';
+    msg.style.color='var(--danger)';msg.style.display='block';return;
+  }
+  msg.textContent='Salvataggio...';msg.style.color='var(--muted)';msg.style.display='block';
+  try{
+    const bin=await binGet();
+    const c=bin.clienti&&bin.clienti[cid];
+    if(!c){msg.textContent='Cliente non trovato.';msg.style.color='var(--danger)';return;}
+    c.pin=pinVal;
+    await binPut(bin);
+    const nc=((c.nome||'')+' '+(c.cognome||'')).trim();
+    msg.textContent='✅ PIN aggiornato per '+nc+'. Comunicaglielo di persona.';
+    msg.style.color='var(--success)';
+    document.getElementById('sch-pin').value='';
+    setTimeout(()=>msg.style.display='none',4000);
+  }catch(e){msg.textContent='Errore: '+e.message;msg.style.color='var(--danger)';}
 }
 
 async function salvaAnagraficaBarista(cid){
@@ -1284,7 +1323,20 @@ async function initLanding(token){
     const bin=await binGet();
     const age=(Date.now()-(bin.tokenTs||0))/1000;
     if(bin.token!==token||age>QR_TTL+5){
-      document.getElementById('cl-loading').innerHTML='<div style="font-size:44px;margin-bottom:11px;">⏰</div><p style="font-size:15px;color:var(--danger);">QR scaduto.<br>Chiedi al barista un nuovo codice.</p>';
+      // QR scaduto: se il cliente è già registrato mostra la carta
+      // se è nuovo mostra registrazione (potrà comunque inviare la richiesta)
+      if(savedId&&bin.clienti&&bin.clienti[savedId]){
+        curCId=savedId;renderCartaCliente(bin.clienti[savedId]);
+        showClSub('cl-carta');clTab('punti');
+        showToast('QR scaduto — hai effettuato accesso dalla tua tessera');
+      }else if(savedEmail){
+        const f2=Object.values(bin.clienti||{}).find(c=>c.email===savedEmail);
+        if(f2){curCId=f2.id;renderCartaCliente(f2);showClSub('cl-carta');clTab('punti');}
+        else showRegistration(savedEmail);
+      }else{
+        showRegistration('');
+        showToast('QR scaduto — registrati comunque!');
+      }
       return;
     }
     if(savedId&&bin.clienti&&bin.clienti[savedId]){curCId=savedId;await sendRequest(bin,savedId);}
@@ -1329,7 +1381,8 @@ async function registerCliente(){
 }
 
 async function sendRequest(bin,cid){
-  bin.request={token:pendingToken,clienteId:cid,ts:Date.now()};
+  // Non usiamo pendingToken — la richiesta vale per 90s indipendentemente dal QR
+  bin.request={clienteId:cid,ts:Date.now()};
   await binPut(bin);
   const c=bin.clienti[cid];
   if(c)renderUBadge('cl-ubadge',c);
