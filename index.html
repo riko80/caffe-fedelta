@@ -125,6 +125,12 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
 .hist-pts.minus{color:var(--danger);}
 .hist-pts.neutral{color:var(--gold);}
 .empty{text-align:center;color:var(--muted);font-style:italic;font-size:14px;padding:18px 0;}
+.id-badge{display:inline-block;background:var(--espresso);color:var(--gold);font-family:monospace;font-size:11px;font-weight:bold;padding:2px 7px;border-radius:5px;margin-right:4px;}
+.id-big{font-family:monospace;font-size:28px;font-weight:bold;color:var(--gold);background:var(--espresso);padding:8px 18px;border-radius:10px;display:inline-block;letter-spacing:1px;}
+.search-wrap{position:relative;margin-bottom:12px;}
+.search-inp{width:100%;padding:10px 14px 10px 36px;border:1px solid var(--latte);border-radius:var(--rs);font-size:14px;font-family:'Georgia',serif;background:white;color:var(--text);outline:none;}
+.search-inp:focus{border-color:var(--crema);}
+.search-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;}
 
 /* PIN */
 .pin-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;padding:24px;}
@@ -377,7 +383,10 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
   <!-- CLIENTI TAB -->
   <div class="page" id="bpage-clienti">
     <div class="hdr"><span class="cup">👥</span><h1>Clienti registrati</h1></div>
-    <!-- Alert clienti con omaggio disponibile -->
+    <div class="search-wrap">
+      <span class="search-ico">🔍</span>
+      <input class="search-inp" id="b-search" type="text" placeholder="Cerca per nome, cognome, email o numero tessera..." oninput="filterClienti(this.value)">
+    </div>
     <div id="b-omaggi-alert" style="display:none;" class="alert alert-gold">
       <div class="ai">🎁</div>
       <p><strong>Omaggi disponibili</strong><span id="b-omaggi-nomi"></span></p>
@@ -423,8 +432,10 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     </div>
     <div class="card">
       <div style="background:var(--latte);border-radius:var(--rs);padding:11px 13px;margin-bottom:14px;font-size:13px;color:var(--muted);font-style:italic;line-height:1.6;">📱 La prossima volta ti riconosciamo automaticamente — niente password!</div>
-      <label class="lbl">Come ti chiami?</label>
-      <input class="inp" id="r-nome" type="text" placeholder="Il tuo nome" autocomplete="given-name">
+      <label class="lbl">Nome</label>
+      <input class="inp" id="r-nome" type="text" placeholder="es. Mario" autocomplete="given-name">
+      <label class="lbl">Cognome</label>
+      <input class="inp" id="r-cognome" type="text" placeholder="es. Rossi" autocomplete="family-name">
       <label class="lbl">La tua email</label>
       <input class="inp" id="r-email" type="email" placeholder="mario@email.com" autocomplete="email" inputmode="email">
       <label class="lbl">Scegli il tuo avatar</label>
@@ -514,6 +525,11 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
 
     <div id="cl-tab-punti" style="max-width:480px;margin:0 auto;padding:14px;">
       <div id="cl-carta-badge" class="ubadge"></div>
+      <div id="cl-id-box" style="display:none;text-align:center;background:var(--espresso);border-radius:var(--r);padding:12px;margin-bottom:13px;">
+        <div style="font-size:11px;color:rgba(255,255,255,.6);font-style:italic;margin-bottom:5px;">Il tuo numero tessera</div>
+        <div id="cl-id-num" class="id-big"></div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);font-style:italic;margin-top:5px;">Comunicalo al barista se non hai il telefono</div>
+      </div>
 
       <div class="alert alert-gold" id="cl-free-c" style="display:none;">
         <div class="ai">🎉</div>
@@ -850,13 +866,14 @@ async function approvaConsumo(){
     if(cid&&bin.clienti[cid]){
       bin.clienti[cid].approvalPending={tipo:aDrink,qty:aQty,ts:Date.now()};
     }
+    // lastApproval va scritto NEL BIN prima di binPut
+    bin.lastApproval={cid:cid,tipo:aDrink,qty:aQty,ts:Date.now(),denied:false};
     bin.request=null;
-    if(aDrink==='caffe')bin.stats.caffe+=aQty;else bin.stats.cap+=aQty;
+    if(aDrink==='caffe')bin.stats.caffe=(bin.stats.caffe||0)+aQty;else bin.stats.cap=(bin.stats.cap||0)+aQty;
     if(!Array.isArray(bin.stats.storia))bin.stats.storia=[];for(let i=0;i<aQty;i++)bin.stats.storia.unshift({tipo:aDrink,ts:Date.now()});
     await binPut(bin);
     document.getElementById('approv-cons').classList.remove('show');
     showToast('✅ '+aQty+' '+(aDrink==='caffe'?'caffè':'cappuccino')+' approvato!');
-    bin.lastApproval={cid:cid,tipo:aDrink,qty:aQty,ts:Date.now(),denied:false};
     updBStats();
     setTimeout(()=>forceQR(),8000);
   }catch(e){showToast('❌ Errore: '+e.message);}
@@ -1090,6 +1107,41 @@ async function approvaOmaggioScheda(cid,tipo){
   }catch(e){showToast('❌ Errore');}
 }
 
+function renderClientiList(lista){
+  const cl=document.getElementById('clienti-list');
+  if(!lista||!lista.length){cl.innerHTML='<p class="empty">Nessun cliente trovato.</p>';return;}
+  cl.innerHTML=lista.map(c=>{
+    const pC=c.puntiC||0,pK=c.puntiK||0;
+    const hasOM=(pC>=OM)||(pK>=OM);
+    const unread=(c.notifiche||[]).filter(n=>!n.letta).length;
+    const idStr=c.numId?String(c.numId).padStart(4,'0'):'';
+    const nc=((c.nome||'')+' '+(c.cognome||'')).trim();
+    return '<div class="client-row" onclick="apriScheda(''+c.id+'')">'
+      +'<span class="cr-av">'+(c.avatar||'😊')+'</span>'
+      +'<div class="cr-info">'
+      +'<div class="cr-name">'+(idStr?'<span class="id-badge">'+idStr+'</span> ':'')+nc+(hasOM?'<span class="cr-alert-dot"></span>':'')+'</div>'
+      +'<div class="cr-sub">'+(c.email||'')+'</div>'
+      +'</div>'
+      +'<div class="cr-pts">'
+      +'<div class="cr-badge">☕'+pC+'/10 · 🥛'+pK+'/10</div>'
+      +'<div class="cr-sub2">🎁'+(c.totOmaggi||0)+(unread?' · 🔔'+unread:'')+'</div>'
+      +'</div></div>';
+  }).join('');
+}
+function filterClienti(q){
+  if(!window._tuttiClienti)return;
+  const s=(q||'').trim().toLowerCase();
+  if(!s){renderClientiList(window._tuttiClienti);return;}
+  const res=window._tuttiClienti.filter(c=>{
+    const id=c.numId?String(c.numId):'';
+    return id.includes(s)
+      ||(c.nome||'').toLowerCase().includes(s)
+      ||(c.cognome||'').toLowerCase().includes(s)
+      ||(c.email||'').toLowerCase().includes(s)
+      ||((c.nome||'')+' '+(c.cognome||'')).toLowerCase().includes(s);
+  });
+  renderClientiList(res);
+}
 async function updBStats(){
   try{
     const bin=await binGet();const s=bin.stats||{};
@@ -1111,23 +1163,9 @@ async function updBStats(){
     const cl=document.getElementById('clienti-list');
     checkOmaggiAlert(bin);
     if(!clienti.length){cl.innerHTML='<p class="empty">Nessun cliente registrato.</p>';return;}
-    clienti.sort((a,b)=>((b.totC||0)+(b.totK||0))-((a.totC||0)+(a.totK||0)));
-    cl.innerHTML=clienti.map(c=>{
-      const pC=c.puntiC||0,pK=c.puntiK||0;
-      const hasOM=(pC>=OM)||(pK>=OM);
-      const unread=(c.notifiche||[]).filter(n=>!n.letta).length;
-      return `<div class="client-row" onclick="apriScheda('${c.id}')">
-        <span class="cr-av">${c.avatar}</span>
-        <div class="cr-info">
-          <div class="cr-name">${c.nome}${hasOM?'<span class="cr-alert-dot"></span>':''}</div>
-          <div class="cr-sub">${c.email}</div>
-        </div>
-        <div class="cr-pts">
-          <div class="cr-badge">☕${pC}/10 · 🥛${pK}/10</div>
-          <div class="cr-sub2">🎁${c.totOmaggi||0} omaggi${unread?' · 🔔'+unread:''}</div>
-        </div>
-      </div>`;
-    }).join('');
+    clienti.sort((a,b)=>(a.numId||9999)-(b.numId||9999));
+    window._tuttiClienti=clienti;
+    renderClientiList(clienti);
   }catch(e){}
 }
 
@@ -1172,6 +1210,7 @@ function showRegistration(pre){
 
 async function registerCliente(){
   const nome=document.getElementById('r-nome').value.trim();
+  const cognome=(document.getElementById('r-cognome')?.value||'').trim();
   const email=document.getElementById('r-email').value.trim().toLowerCase();
   const av=document.querySelector('.av-btn.sel')?.textContent||'😊';
   const err=document.getElementById('r-err');
@@ -1183,8 +1222,10 @@ async function registerCliente(){
     const bin=await binGet();
     const existing=Object.values(bin.clienti||{}).find(c=>c.email===email);
     if(existing){curCId=existing.id;localStorage.setItem('cf_id',existing.id);localStorage.setItem('cf_email',email);await sendRequest(bin,existing.id);return;}
+    const nums=Object.values(bin.clienti||{}).map(c=>c.numId||0);
+    const numId=(nums.length?Math.max(...nums):0)+1;
     const id='c'+Date.now().toString(36);
-    const newC={id,nome,email,avatar:av,puntiC:0,puntiK:0,totC:0,totK:0,totOmaggi:0,storia:[],notifiche:[],registrato:Date.now()};
+    const newC={id,numId,nome,cognome,email,avatar:av,puntiC:0,puntiK:0,totC:0,totK:0,totOmaggi:0,storia:[],notifiche:[],registrato:Date.now()};
     bin.clienti=bin.clienti||{};bin.clienti[id]=newC;
     curCId=id;localStorage.setItem('cf_id',id);localStorage.setItem('cf_email',email);
     await sendRequest(bin,id);
@@ -1248,16 +1289,19 @@ function startCPoll(cid){
       const la=bin.lastApproval;
       if(!la||la.cid!==cid||(Date.now()-la.ts)>90000)return;
 
+      // Trovato! Ferma il polling
       active=false;clearInterval(cPollTimer);cPollTimer=null;
       bin.lastApproval=null;binPut(bin).catch(()=>{});
 
       if(la.denied){showClSub('cl-deny');return;}
 
+      // Leggi il cliente aggiornato dal bin
+      const c=bin.clienti&&bin.clienti[cid];
+      if(!c){showClSub('cl-accedi');return;}
+
       const{tipo,qty}=la;
       curCId=cid;
-      const mancanoC=Math.max(0,OM-(c.puntiC||0));
-      const mancanoK=Math.max(0,OM-(c.puntiK||0));
-      const mancano=tipo==='caffe'?mancanoC:mancanoK;
+      const mancano=tipo==='caffe'?Math.max(0,OM-(c.puntiC||0)):Math.max(0,OM-(c.puntiK||0));
       const nomeT=tipo==='caffe'?'caffè':'cappuccin'+(qty===1?'o':'i');
       const nomeO=tipo==='caffe'?'caffè':'cappuccino';
 
@@ -1266,9 +1310,10 @@ function startCPoll(cid){
       showClSub('cl-carta');
       clTab('punti');
 
+      // Messaggio di conferma prominente
       const msg=mancano===0
-        ?'🎉 +'+qty+' '+nomeT+' aggiunti! Hai diritto a un '+nomeO+' GRATIS — chiedilo al barista!'
-        :'✅ +'+qty+' '+nomeT+' aggiunti alla tua carta! Ti mancano ancora '+mancano+' '+nomeT+' per il prossimo omaggio.';
+        ?'🎉 +'+qty+' '+nomeT+' aggiunti! Hai diritto a un '+nomeO+' GRATIS!'
+        :'✅ +'+qty+' '+nomeT+' aggiunti! Ne mancano ancora '+mancano+' per il prossimo omaggio.';
       showBigToast(msg);
     }catch(e){/* rete, riprova al prossimo tick */}
   },2000);
@@ -1340,6 +1385,10 @@ function showClCarta(){
 
 function renderCartaCliente(c){
   renderUBadge('cl-carta-badge',c);
+  const _ib=document.getElementById('cl-id-box');
+  const _in=document.getElementById('cl-id-num');
+  if(_ib)_ib.style.display='block';
+  if(_in)_in.textContent=c.numId?String(c.numId).padStart(4,'0'):'—';
   const pC=c.puntiC||0,pK=c.puntiK||0;
   document.getElementById('cl-nc').textContent=c.totC||0;
   document.getElementById('cl-nk').textContent=c.totK||0;
@@ -1457,7 +1506,14 @@ function buildNotifiche(notifiche,c){
 
 function renderUBadge(elId,c){
   const el=document.getElementById(elId);if(!el)return;
-  el.innerHTML=`<span class="uav">${c.avatar||'😊'}</span><div><div class="uname">${c.nome}</div><div class="usub">${c.email}</div></div><button class="uout" onclick="logoutCliente()">Cambia</button>`;
+  const idStr=c.numId?String(c.numId).padStart(4,'0'):'';
+  const nc=((c.nome||'')+' '+(c.cognome||'')).trim();
+  el.innerHTML='<span class="uav">'+(c.avatar||'😊')+'</span>'
+    +'<div style="flex:1;">'
+    +'<div class="uname">'+(idStr?'<span class="id-badge">'+idStr+'</span>':'')+nc+'</div>'
+    +'<div class="usub">'+(c.email||'')+'</div>'
+    +'</div>'
+    +'<button class="uout" onclick="logoutCliente()">Cambia</button>';
 }
 
 function logoutCliente(){localStorage.removeItem('cf_id');localStorage.removeItem('cf_email');curCId=null;showView('view-mode');}
