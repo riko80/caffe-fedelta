@@ -249,8 +249,8 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <h2 style="margin-bottom:10px;">1. Database Firebase gratuito</h2>
       <div style="background:var(--latte);border-radius:var(--rs);padding:11px;font-size:13px;color:var(--muted);font-style:italic;line-height:2;margin-bottom:12px;">
         1. <a href="https://console.firebase.google.com" target="_blank" style="color:var(--crema);">console.firebase.google.com</a> → crea progetto<br>
-        2. Menu: <strong>Realtime Database</strong> → Crea database → modalità test<br>
-        3. Tab <strong>Regole</strong> → <code>".read":true,".write":true</code> → Pubblica<br>
+        2. <strong>Realtime Database</strong> → Crea database → modalità test<br>
+        3. Tab <strong>Regole</strong> → imposta <code>".read":true,".write":true</code> → Pubblica<br>
         4. Copia l'URL (es: <code>https://mio-bar-rtdb.firebaseio.com</code>)
       </div>
       <label class="lbl">URL Firebase Realtime Database</label>
@@ -423,8 +423,10 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     </div>
     <div class="card">
       <div style="background:var(--latte);border-radius:var(--rs);padding:11px 13px;margin-bottom:14px;font-size:13px;color:var(--muted);font-style:italic;line-height:1.6;">📱 La prossima volta ti riconosciamo automaticamente — niente password!</div>
-      <label class="lbl">Come ti chiami?</label>
-      <input class="inp" id="r-nome" type="text" placeholder="Il tuo nome" autocomplete="given-name">
+      <label class="lbl">Nome</label>
+      <input class="inp" id="r-nome" type="text" placeholder="es. Mario" autocomplete="given-name">
+      <label class="lbl">Cognome</label>
+      <input class="inp" id="r-cognome" type="text" placeholder="es. Rossi" autocomplete="family-name">
       <label class="lbl">La tua email</label>
       <input class="inp" id="r-email" type="email" placeholder="mario@email.com" autocomplete="email" inputmode="email">
       <label class="lbl">Scegli il tuo avatar</label>
@@ -656,12 +658,22 @@ let curCId=null, pendingToken=null;
 // ════════════════════════════════════
 // JSONBin
 // ════════════════════════════════════
+// Helper: assicura che ogni campo array del bin sia sempre un array
+function normBin(b){
+  if(!b)b={};
+  if(!b.clienti)b.clienti={};
+  if(!b.stats)b.stats={caffe:0,cap:0,omaggi:0,storia:[]};
+  if(!Array.isArray(b.stats.storia))b.stats.storia=[];
+  Object.values(b.clienti).forEach(c=>{
+    if(!Array.isArray(c.storia))c.storia=[];
+    if(!Array.isArray(c.notifiche))c.notifiche=[];
+  });
+  return b;
+}
 async function binGet(){
   const r=await fetch(CFG.dbUrl+'/caffe.json');
   if(!r.ok)throw new Error('DB '+r.status);
-  const d=await r.json();
-  if(!d)return {token:'',tokenTs:0,request:null,clienti:{},stats:{caffe:0,cap:0,omaggi:0,storia:[]}};
-  return d;
+  return normBin(await r.json());
 }
 async function binPut(d){
   const r=await fetch(CFG.dbUrl+'/caffe.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
@@ -681,14 +693,14 @@ async function setupSave(){
   const pin=document.getElementById('s-pin').value.trim();
   const err=document.getElementById('s-err');
   const dbUrl=key.replace(/\/+$/,'');
-  if(!dbUrl.startsWith('https://')){err.textContent="Incolla l'URL Firebase (inizia con https://)";err.style.display='block';return;}
+  if(!dbUrl.startsWith('https://')){err.textContent="URL non valido: incolla l'URL Firebase (es. https://mio-bar-rtdb.firebaseio.com)";err.style.display='block';return;}
   if(!pin||pin.length<4){err.textContent='PIN deve essere 4 cifre.';err.style.display='block';return;}
   err.style.display='none';
   const btn=document.getElementById('s-btn');btn.disabled=true;btn.textContent='⏳...';
   try{
     const init={token:'',tokenTs:0,request:null,clienti:{},stats:{caffe:0,cap:0,omaggi:0,storia:[]}};
     const res=await fetch(dbUrl+'/caffe.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(init)});
-    if(!res.ok){const t=await res.text();throw new Error(res.status+': '+t.slice(0,100));}
+    if(!res.ok){const t=await res.text();throw new Error(res.status+': '+t.slice(0,120));}
     CFG={dbUrl,pin};saveCFG();showView('view-mode');
   }catch(e){err.textContent='Errore: '+e.message;err.style.display='block';}
   btn.disabled=false;btn.textContent='✅ Salva e inizia';
@@ -1164,6 +1176,7 @@ function showRegistration(pre){
 
 async function registerCliente(){
   const nome=document.getElementById('r-nome').value.trim();
+  const cognome=(document.getElementById('r-cognome')?.value||'').trim();
   const email=document.getElementById('r-email').value.trim().toLowerCase();
   const av=document.querySelector('.av-btn.sel')?.textContent||'😊';
   const err=document.getElementById('r-err');
@@ -1175,8 +1188,11 @@ async function registerCliente(){
     const bin=await binGet();
     const existing=Object.values(bin.clienti||{}).find(c=>c.email===email);
     if(existing){curCId=existing.id;localStorage.setItem('cf_id',existing.id);localStorage.setItem('cf_email',email);await sendRequest(bin,existing.id);return;}
+    // Genera ID numerico progressivo
+    const nums=Object.values(bin.clienti||{}).map(c=>c.numId||0);
+    const numId=(nums.length>0?Math.max(...nums):0)+1;
     const id='c'+Date.now().toString(36);
-    const newC={id,nome,email,avatar:av,puntiC:0,puntiK:0,totC:0,totK:0,totOmaggi:0,storia:[],notifiche:[],registrato:Date.now()};
+    const newC={id,numId,nome,cognome,email,avatar:av,puntiC:0,puntiK:0,totC:0,totK:0,totOmaggi:0,storia:[],notifiche:[],registrato:Date.now()};
     bin.clienti=bin.clienti||{};bin.clienti[id]=newC;
     curCId=id;localStorage.setItem('cf_id',id);localStorage.setItem('cf_email',email);
     await sendRequest(bin,id);
