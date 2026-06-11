@@ -125,6 +125,12 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
 .hist-pts.minus{color:var(--danger);}
 .hist-pts.neutral{color:var(--gold);}
 .empty{text-align:center;color:var(--muted);font-style:italic;font-size:14px;padding:18px 0;}
+.id-badge{display:inline-block;background:var(--espresso);color:var(--gold);font-family:monospace;font-size:11px;font-weight:bold;padding:2px 8px;border-radius:6px;margin-right:4px;}
+.id-big{font-family:monospace;font-size:26px;font-weight:bold;color:var(--gold);background:var(--espresso);padding:6px 16px;border-radius:10px;display:inline-block;}
+.search-wrap{position:relative;margin-bottom:12px;}
+.search-inp{width:100%;padding:10px 14px 10px 36px;border:1px solid var(--latte);border-radius:var(--rs);font-size:14px;font-family:'Georgia',serif;background:white;color:var(--text);outline:none;}
+.search-inp:focus{border-color:var(--crema);}
+.search-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;}
 
 /* PIN */
 .pin-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;padding:24px;}
@@ -377,7 +383,10 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
   <!-- CLIENTI TAB -->
   <div class="page" id="bpage-clienti">
     <div class="hdr"><span class="cup">👥</span><h1>Clienti registrati</h1></div>
-    <!-- Alert clienti con omaggio disponibile -->
+    <div class="search-wrap">
+      <span class="search-ico">🔍</span>
+      <input class="search-inp" id="b-search" type="text" placeholder="Cerca per nome, cognome, email o ID..." oninput="filterClienti(this.value)">
+    </div>
     <div id="b-omaggi-alert" style="display:none;" class="alert alert-gold">
       <div class="ai">🎁</div>
       <p><strong>Omaggi disponibili</strong><span id="b-omaggi-nomi"></span></p>
@@ -516,6 +525,11 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
 
     <div id="cl-tab-punti" style="max-width:480px;margin:0 auto;padding:14px;">
       <div id="cl-carta-badge" class="ubadge"></div>
+      <div id="cl-id-box" style="display:none;text-align:center;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--muted);font-style:italic;margin-bottom:4px;">Numero tessera</div>
+        <div id="cl-id-num" class="id-big"></div>
+        <div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:4px;">Comunicalo al barista se non hai il telefono</div>
+      </div>
 
       <div class="alert alert-gold" id="cl-free-c" style="display:none;">
         <div class="ai">🎉</div>
@@ -755,7 +769,14 @@ async function startQRCycle(){
 
 async function pushTok(){
   curToken=genTok();
-  try{const bin=await binGet();bin.token=curToken;bin.tokenTs=Date.now();bin.request=null;await binPut(bin);}catch(e){setConn(false);}
+  try{
+    const bin=await binGet();
+    bin.token=curToken;
+    bin.tokenTs=Date.now();
+    bin.request=null;
+    // NON azzerare lastApproval — il cliente potrebbe non averlo ancora letto
+    await binPut(bin);
+  }catch(e){setConn(false);}
   renderQR(curToken);setConn(true);
   document.getElementById('approv-cons').classList.remove('show');
   document.getElementById('approv-riscatto').classList.remove('show');
@@ -841,41 +862,40 @@ async function approvaConsumo(){
       for(let i=0;i<aQty;i++){
         if(aDrink==='caffe'){c.puntiC=(c.puntiC||0)+1;c.totC=(c.totC||0)+1;}
         else{c.puntiK=(c.puntiK||0)+1;c.totK=(c.totK||0)+1;}
-        c.storia=c.storia||[];
-        c.storia.unshift({id:uid(),tipo:aDrink,delta:1,testo:(aDrink==='caffe'?'☕ Caffè aggiunto':'🥛 Cappuccino aggiunto'),ts:Date.now()});
+        if(!Array.isArray(c.storia))c.storia=[];
+        c.storia.unshift({id:uid(),tipo:aDrink,delta:1,testo:(aDrink==='caffe'?'Caffe aggiunto':'Cappuccino aggiunto'),ts:Date.now()});
       }
-      // Notifica al cliente
-      pushNotif(c,'info',`Il barista ha aggiunto ${aQty} ${nome} alla tua carta.`,'➕');
-      // Alert omaggio
-      if(aDrink==='caffe'&&(c.puntiC||0)>=OM) pushNotif(c,'gold','🎉 Hai raggiunto 10 caffè! Hai diritto a un caffè gratuito — chiedilo al barista.','🎁');
-      if(aDrink==='cappuccino'&&(c.puntiK||0)>=OM) pushNotif(c,'gold','🎉 Hai raggiunto 10 cappuccini! Hai diritto a un cappuccino gratuito — chiedilo al barista.','🎁');
+      if(!Array.isArray(c.notifiche))c.notifiche=[];
+      pushNotif(c,'info','Il barista ha aggiunto '+aQty+' '+(aDrink==='caffe'?'caffe':'cappuccino')+' alla tua carta.','');
+      if(aDrink==='caffe'&&(c.puntiC||0)>=OM) pushNotif(c,'gold','Hai raggiunto 10 caffe! Hai diritto a un caffe gratuito.','');
+      if(aDrink==='cappuccino'&&(c.puntiK||0)>=OM) pushNotif(c,'gold','Hai raggiunto 10 cappuccini! Hai diritto a un cappuccino gratuito.','');
     }
-    // Scrive approval DENTRO il cliente — pushTok non lo toccherà mai
-    if(cid&&bin.clienti[cid]){
-      bin.clienti[cid].approvalPending={tipo:aDrink,qty:aQty,ts:Date.now()};
-    }
+    // Segnale per il cliente: campo top-level che pushTok NON tocca
+    bin.lastApproval={cid:cid,tipo:aDrink,qty:aQty,ts:Date.now(),denied:false};
     bin.request=null;
-    if(aDrink==='caffe')bin.stats.caffe+=aQty;else bin.stats.cap+=aQty;
+    if(!Array.isArray(bin.stats.storia))bin.stats.storia=[];
+    if(aDrink==='caffe')bin.stats.caffe=(bin.stats.caffe||0)+aQty;
+    else bin.stats.cap=(bin.stats.cap||0)+aQty;
     for(let i=0;i<aQty;i++)bin.stats.storia.unshift({tipo:aDrink,ts:Date.now()});
     await binPut(bin);
     document.getElementById('approv-cons').classList.remove('show');
-    showToast('✅ '+aQty+' '+(aDrink==='caffe'?'caffè':'cappuccino')+' approvato!');
+    showToast('✅ '+aQty+' '+(aDrink==='caffe'?'caffe':'cappuccino')+' approvato!');
     updBStats();
-    forceQR();
-  }catch(e){showToast('❌ Errore: '+e.message);}
+    // Rinnova QR dopo 8s — dà tempo al cliente di leggere lastApproval
+    setTimeout(()=>forceQR(),8000);
+  }catch(e){showToast("Errore: "+e.message);}
 }
 
 async function rifiutaConsumo(){
   try{
     const bin=await binGet();
     const req=bin.request;
-    if(req&&req.clienteId&&bin.clienti[req.clienteId]){
-      bin.clienti[req.clienteId].approvalPending={denied:true,ts:Date.now()};
-    }
+    const cid=req&&req.clienteId;
+    bin.lastApproval={cid:cid||null,denied:true,ts:Date.now()};
     bin.request=null;
     await binPut(bin);
     document.getElementById('approv-cons').classList.remove('show');
-    forceQR();
+    setTimeout(()=>forceQR(),8000);
   }catch(e){}
 }
 
@@ -1094,6 +1114,36 @@ async function approvaOmaggioScheda(cid,tipo){
   }catch(e){showToast('❌ Errore');}
 }
 
+function renderClientiList(clienti){
+  const cl=document.getElementById('clienti-list');
+  if(!clienti||!clienti.length){cl.innerHTML='<p class="empty">Nessun cliente trovato.</p>';return;}
+  cl.innerHTML=clienti.map(c=>{
+    const pC=c.puntiC||0,pK=c.puntiK||0;
+    const hasOM=(pC>=OM)||(pK>=OM);
+    const unread=(c.notifiche||[]).filter(n=>!n.letta).length;
+    const idStr=c.numId?String(c.numId).padStart(4,'0'):'';
+    const nc=((c.nome||'')+' '+(c.cognome||'')).trim();
+    return '<div class="client-row" onclick="apriScheda(''+c.id+'')">'
+      +'<span class="cr-av">'+(c.avatar||'😊')+'</span>'
+      +'<div class="cr-info">'
+      +'<div class="cr-name">'+(idStr?'<span class="id-badge">'+idStr+'</span> ':'')+nc+(hasOM?'<span class="cr-alert-dot"></span>':'')+'</div>'
+      +'<div class="cr-sub">'+(c.email||'')+'</div>'
+      +'</div>'
+      +'<div class="cr-pts">'
+      +'<div class="cr-badge">☕'+pC+'/10 · 🥛'+pK+'/10</div>'
+      +'<div class="cr-sub2">🎁'+(c.totOmaggi||0)+(unread?' · 🔔'+unread:'')+'</div>'
+      +'</div></div>';
+  }).join('');
+}
+function filterClienti(q){
+  if(!window._allClienti)return;
+  const s=q.trim().toLowerCase();
+  if(!s){renderClientiList(window._allClienti);return;}
+  renderClientiList(window._allClienti.filter(c=>{
+    const id=c.numId?String(c.numId):'';
+    return id.includes(s)||(c.nome||'').toLowerCase().includes(s)||(c.cognome||'').toLowerCase().includes(s)||(c.email||'').toLowerCase().includes(s);
+  }));
+}
 async function updBStats(){
   try{
     const bin=await binGet();const s=bin.stats||{};
@@ -1115,23 +1165,9 @@ async function updBStats(){
     const cl=document.getElementById('clienti-list');
     checkOmaggiAlert(bin);
     if(!clienti.length){cl.innerHTML='<p class="empty">Nessun cliente registrato.</p>';return;}
-    clienti.sort((a,b)=>((b.totC||0)+(b.totK||0))-((a.totC||0)+(a.totK||0)));
-    cl.innerHTML=clienti.map(c=>{
-      const pC=c.puntiC||0,pK=c.puntiK||0;
-      const hasOM=(pC>=OM)||(pK>=OM);
-      const unread=(c.notifiche||[]).filter(n=>!n.letta).length;
-      return `<div class="client-row" onclick="apriScheda('${c.id}')">
-        <span class="cr-av">${c.avatar}</span>
-        <div class="cr-info">
-          <div class="cr-name">${c.nome}${hasOM?'<span class="cr-alert-dot"></span>':''}</div>
-          <div class="cr-sub">${c.email}</div>
-        </div>
-        <div class="cr-pts">
-          <div class="cr-badge">☕${pC}/10 · 🥛${pK}/10</div>
-          <div class="cr-sub2">🎁${c.totOmaggi||0} omaggi${unread?' · 🔔'+unread:''}</div>
-        </div>
-      </div>`;
-    }).join('');
+    clienti.sort((a,b)=>(a.numId||9999)-(b.numId||9999));
+    window._allClienti=clienti;
+    renderClientiList(clienti);
   }catch(e){}
 }
 
@@ -1234,14 +1270,12 @@ function startCPoll(cid){
 
   cPollTimer=setInterval(async()=>{
     if(!active)return;
-    // Aggiorna timer visivo
     secs=Math.max(0,secs-2);
     const wEl=document.getElementById('cl-wsecs');
     const wBar=document.getElementById('cl-wbar');
     if(wEl)wEl.textContent=secs;
     if(wBar)wBar.style.width=Math.round((secs/60)*100)+'%';
 
-    // Timeout
     if(secs<=0){
       active=false;clearInterval(cPollTimer);cPollTimer=null;
       const ld=document.getElementById('cl-loading');
@@ -1249,30 +1283,32 @@ function startCPoll(cid){
       showClSub('cl-loading');return;
     }
 
-    // Leggi il bin
     try{
       const bin=await binGet();
-      if(!active)return; // nel frattempo è scaduto
-      const c=bin.clienti&&bin.clienti[cid];
-      const ap=c&&c.approvalPending;
-      if(!ap||(Date.now()-ap.ts)>120000)return; // nessuna risposta ancora
+      if(!active)return;
 
-      // Trovata! Ferma il polling
+      // Legge lastApproval — campo top-level, NON viene azzerato da pushTok
+      const la=bin.lastApproval;
+      if(!la||la.cid!==cid)return;            // non per me
+      if((Date.now()-la.ts)>120000)return;     // troppo vecchio
+
+      // Trovata risposta
       active=false;clearInterval(cPollTimer);cPollTimer=null;
 
-      // Cancella approvalPending dal bin subito
-      bin.clienti[cid].approvalPending=null;
-      binPut(bin).catch(()=>{}); // fire-and-forget, non blocca il redirect
+      // Cancella lastApproval e salva
+      bin.lastApproval=null;
+      binPut(bin).catch(()=>{});
 
-      if(ap.denied){showClSub('cl-deny');return;}
+      if(la.denied){showClSub('cl-deny');return;}
 
-      const{tipo,qty}=ap;
+      const c=bin.clienti&&bin.clienti[cid];
+      if(!c){showClSub('cl-accedi');return;}
+
+      const{tipo,qty}=la;
       curCId=cid;
-      const mancanoC=Math.max(0,OM-(c.puntiC||0));
-      const mancanoK=Math.max(0,OM-(c.puntiK||0));
-      const mancano=tipo==='caffe'?mancanoC:mancanoK;
-      const nomeT=tipo==='caffe'?'caffè':'cappuccin'+(qty===1?'o':'i');
-      const nomeO=tipo==='caffe'?'caffè':'cappuccino';
+      const mancano=tipo==='caffe'?Math.max(0,OM-(c.puntiC||0)):Math.max(0,OM-(c.puntiK||0));
+      const nomeT=tipo==='caffe'?'caffe':'cappuccin'+(qty===1?'o':'i');
+      const nomeO=tipo==='caffe'?'caffe':'cappuccino';
 
       try{window.history.replaceState(null,'',getLinkP());}catch(ex){}
       renderCartaCliente(c);
@@ -1280,10 +1316,10 @@ function startCPoll(cid){
       clTab('punti');
 
       const msg=mancano===0
-        ?'🎉 +'+qty+' '+nomeT+' aggiunti! Hai diritto a un '+nomeO+' GRATIS — chiedilo al barista!'
-        :'✅ +'+qty+' '+nomeT+' aggiunti alla tua carta! Ti mancano ancora '+mancano+' '+nomeT+' per il prossimo omaggio.';
+        ?'+'+qty+' '+nomeT+' aggiunti! Hai diritto a un '+nomeO+' GRATIS!'
+        :'+'+qty+' '+nomeT+' aggiunti! Mancano ancora '+mancano+' per il prossimo omaggio.';
       showBigToast(msg);
-    }catch(e){/* rete, riprova al prossimo tick */}
+    }catch(e){/* rete, riprova */}
   },2000);
 }
 // ════════════════════════════════════
@@ -1353,6 +1389,12 @@ function showClCarta(){
 
 function renderCartaCliente(c){
   renderUBadge('cl-carta-badge',c);
+  if(c.numId){
+    const ib=document.getElementById('cl-id-box');
+    const in2=document.getElementById('cl-id-num');
+    if(ib)ib.style.display='block';
+    if(in2)in2.textContent=String(c.numId).padStart(4,'0');
+  }
   const pC=c.puntiC||0,pK=c.puntiK||0;
   document.getElementById('cl-nc').textContent=c.totC||0;
   document.getElementById('cl-nk').textContent=c.totK||0;
@@ -1470,7 +1512,9 @@ function buildNotifiche(notifiche,c){
 
 function renderUBadge(elId,c){
   const el=document.getElementById(elId);if(!el)return;
-  el.innerHTML=`<span class="uav">${c.avatar||'😊'}</span><div><div class="uname">${c.nome}</div><div class="usub">${c.email}</div></div><button class="uout" onclick="logoutCliente()">Cambia</button>`;
+  const idStr=c.numId?String(c.numId).padStart(4,'0'):'';
+  const nc=(c.nome||'')+' '+(c.cognome||'');
+  el.innerHTML='<span class="uav">'+(c.avatar||'😊')+'</span><div style="flex:1;"><div class="uname">'+(idStr?'<span class="id-badge">'+idStr+'</span> ':'')+nc.trim()+'</div><div class="usub">'+(c.email||'')+'</div></div><button class="uout" onclick="logoutCliente()">Cambia</button>';
 }
 
 function logoutCliente(){localStorage.removeItem('cf_id');localStorage.removeItem('cf_email');curCId=null;showView('view-mode');}
