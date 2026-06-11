@@ -525,10 +525,10 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
 
     <div id="cl-tab-punti" style="max-width:480px;margin:0 auto;padding:14px;">
       <div id="cl-carta-badge" class="ubadge"></div>
-      <div id="cl-id-box" style="display:none;text-align:center;margin-bottom:12px;">
-        <div style="font-size:11px;color:var(--muted);font-style:italic;margin-bottom:4px;">Numero tessera</div>
+      <div id="cl-id-box" style="display:none;text-align:center;margin-bottom:14px;background:var(--espresso);border-radius:var(--r);padding:14px;">
+        <div style="font-size:11px;color:rgba(255,255,255,.6);font-style:italic;margin-bottom:6px;">Il tuo numero tessera</div>
         <div id="cl-id-num" class="id-big"></div>
-        <div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:4px;">Comunicalo al barista se non hai il telefono</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);font-style:italic;margin-top:6px;">Comunicalo al barista se non hai il telefono</div>
       </div>
 
       <div class="alert alert-gold" id="cl-free-c" style="display:none;">
@@ -962,7 +962,7 @@ async function apriScheda(cid){
   try{
     const bin=await binGet();
     const c=bin.clienti[cid];if(!c){document.getElementById('scheda-body').innerHTML='<p class="empty">Cliente non trovato.</p>';return;}
-    document.getElementById('scheda-nav-name').textContent=c.avatar+' '+c.nome;
+    // scheda-nav-name ora impostato dentro renderScheda
     renderScheda(bin,cid);
   }catch(e){document.getElementById('scheda-body').innerHTML='<p class="empty">Errore caricamento.</p>';}
 }
@@ -971,10 +971,22 @@ function renderScheda(bin,cid){
   const c=bin.clienti[cid];
   const pC=c.puntiC||0,pK=c.puntiK||0;
   const hasFreeC=pC>=OM,hasFreeK=pK>=OM;
+  const idStr=c.numId?String(c.numId).padStart(4,'0'):'—';
+  const nomeC=((c.nome||'')+' '+(c.cognome||'')).trim();
+  document.getElementById('scheda-nav-name').textContent=(c.avatar||'')+ ' '+nomeC;
   let html=`
-  <div class="ubadge" style="margin-bottom:14px;">
-    <span class="uav">${c.avatar}</span>
-    <div><div class="uname">${c.nome}</div><div class="usub">${c.email}</div></div>
+  <div class="card" style="margin-bottom:14px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <span style="font-size:34px;">${c.avatar||'😊'}</span>
+      <div style="flex:1;">
+        <div style="font-size:17px;color:var(--espresso);">${nomeC}</div>
+        <div style="font-size:12px;color:var(--muted);font-style:italic;">${c.email||''}</div>
+      </div>
+    </div>
+    <div style="text-align:center;background:var(--espresso);border-radius:var(--rs);padding:10px;">
+      <div style="font-size:11px;color:rgba(255,255,255,.6);font-style:italic;margin-bottom:4px;">Numero tessera</div>
+      <div class="id-big">${idStr}</div>
+    </div>
   </div>`;
 
   if(hasFreeC||hasFreeK){
@@ -1389,12 +1401,11 @@ function showClCarta(){
 
 function renderCartaCliente(c){
   renderUBadge('cl-carta-badge',c);
-  if(c.numId){
-    const ib=document.getElementById('cl-id-box');
-    const in2=document.getElementById('cl-id-num');
-    if(ib)ib.style.display='block';
-    if(in2)in2.textContent=String(c.numId).padStart(4,'0');
-  }
+  // Mostra sempre il box ID (anche per clienti vecchi senza numId)
+  const ib=document.getElementById('cl-id-box');
+  const in2=document.getElementById('cl-id-num');
+  if(ib)ib.style.display='block';
+  if(in2)in2.textContent=c.numId?String(c.numId).padStart(4,'0'):'—';
   const pC=c.puntiC||0,pK=c.puntiK||0;
   document.getElementById('cl-nc').textContent=c.totC||0;
   document.getElementById('cl-nk').textContent=c.totK||0;
@@ -1691,12 +1702,14 @@ window.addEventListener('load',()=>{
   // Decodifica config dall'URL se presente
   if(cp){try{
     const d=JSON.parse(atob(cp));
-    if(d.u){
-      if(!CFG.dbUrl||CFG.dbUrl!==d.u){
-        CFG={dbUrl:d.u};
-        if(!CFG.pin) localStorage.setItem('cf_cfg',JSON.stringify({dbUrl:d.u}));
-        else localStorage.setItem('cf_cfg',JSON.stringify(CFG));
-      }
+    const dbUrl=d.u||null; // supporta solo formato Firebase {u:...}
+    if(dbUrl&&dbUrl.startsWith('https://')){
+      // Aggiorna CFG con il dbUrl dall'URL, preservando il pin del barista
+      const savedPin=CFG.pin||null;
+      CFG={dbUrl:dbUrl};
+      if(savedPin)CFG.pin=savedPin;
+      // Salva sempre in localStorage — serve per riapertura da icona
+      localStorage.setItem('cf_cfg',JSON.stringify(CFG));
     }
   }catch(e){}}
 
@@ -1745,11 +1758,20 @@ window.addEventListener('load',()=>{
   if(cp&&CFG.dbUrl){
     const sid=localStorage.getItem('cf_id');
     showView('view-cl');
-    if(sid){showClSub('cl-loading');binGet().then(bin=>{const c=bin.clienti&&bin.clienti[sid];if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}else showClSub('cl-accedi');}).catch(()=>showClSub('cl-accedi'));}
-    else showClSub('cl-accedi');
+    if(sid){
+      showClSub('cl-loading');
+      binGet().then(bin=>{
+        const c=bin.clienti&&bin.clienti[sid];
+        if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+        else showClSub('cl-accedi');
+      }).catch(()=>showClSub('cl-accedi'));
+    } else {
+      showClSub('cl-accedi');
+    }
     return;
   }
 
+  // Se non ci sono parametri URL e non c'è config → setup
   if(!CFG.dbUrl){showView('view-setup');return;}
   showView('view-mode');
 });
