@@ -2,6 +2,9 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Caffè Fedeltà</title>
 <meta name="description" content="La tua carta fedeltà digitale — accumula caffè e cappuccini, al 10° è gratis!">
@@ -1682,70 +1685,81 @@ function closePWAModal(){
 // INIT
 // ════════════════════════════════════
 window.addEventListener('load',()=>{
-  initPWA();
   loadCFG();
+  initPWA();
+
   const p=new URLSearchParams(window.location.search);
-  const tok=p.get('t'), cp=p.get('c'), idp=p.get('id'), home=p.get('home');
+  const tok=p.get('t');
+  const cp=p.get('c');
+  const idp=p.get('id');
 
-  // Decodifica config dall'URL se presente
-  if(cp){try{
-    const d=JSON.parse(atob(cp));
-    if(d.u&&d.u.startsWith('https://')){
-      const savedPin=CFG.pin||null;
-      CFG={dbUrl:d.u};
-      if(savedPin)CFG.pin=savedPin;
-      localStorage.setItem('cf_cfg',JSON.stringify(CFG));
-    }
-  }catch(e){}}
-
-  // CASO: aperto dall'icona PWA (?home=1) o accesso diretto senza token
-  // → vai sempre alla carta cliente se l'id è salvato, mai al "QR scaduto"
-  if(home||(!tok&&!cp&&!idp)){
-    if(CFG.dbUrl){
-      const sid=localStorage.getItem('cf_id');
-      if(sid){
-        showView('view-cl');showClSub('cl-loading');
-        binGet().then(bin=>{
-          const c=bin.clienti&&bin.clienti[sid];
-          if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
-          else{showView('view-mode');}
-        }).catch(()=>{showView('view-mode');});
-        return;
+  // PASSO 1: estrai dbUrl dal parametro c= se presente — SEMPRE, prima di tutto
+  if(cp){
+    try{
+      const d=JSON.parse(atob(cp));
+      if(d&&d.u&&typeof d.u==='string'&&d.u.startsWith('https://')){
+        const pin=CFG.pin||null;
+        CFG={dbUrl:d.u};
+        if(pin)CFG.pin=pin;
+        localStorage.setItem('cf_cfg',JSON.stringify(CFG));
       }
+    }catch(ignore){}
+  }
+
+  // PASSO 2: se c'è ?t= nell'URL → SEMPRE schermata cliente, mai setup
+  if(tok){
+    showView('view-cl');
+    if(CFG.dbUrl){
+      initLanding(tok);
+    } else {
+      // dbUrl non disponibile: mostra accedi con email
+      showClSub('cl-accedi');
     }
-    if(!CFG.dbUrl){showView('view-setup');return;}
-    showView('view-mode');
     return;
   }
 
-  // CASO: ?t=TOKEN → scansione QR fresca — mai mostrare setup al cliente
-  if(tok){
-    showView('view-cl');
-    if(!CFG.dbUrl){showClSub('cl-accedi');return;}
-    initLanding(tok);return;
-  }
-
-  // CASO: ?c=...&id=... → link personale con id esplicito
+  // PASSO 3: link personale ?c=...&id=...
   if(cp&&idp&&CFG.dbUrl){
-    showView('view-cl');showClSub('cl-loading');
+    showView('view-cl');
+    showClSub('cl-loading');
     binGet().then(bin=>{
       const c=bin.clienti&&bin.clienti[idp];
-      if(c){curCId=idp;localStorage.setItem('cf_id',idp);localStorage.setItem('cf_email',c.email);renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
-      else showClSub('cl-accedi');
+      if(c){
+        curCId=idp;
+        localStorage.setItem('cf_id',idp);
+        localStorage.setItem('cf_email',c.email||'');
+        renderCartaCliente(c);
+        showClSub('cl-carta');
+        clTab('punti');
+      }else{
+        showClSub('cl-accedi');
+      }
     }).catch(()=>showClSub('cl-accedi'));
     return;
   }
 
-  // CASO: ?c=... senza id → cerca da localStorage o chiedi email
+  // PASSO 4: solo ?c= senza id
   if(cp&&CFG.dbUrl){
-    const sid=localStorage.getItem('cf_id');
     showView('view-cl');
-    if(sid){showClSub('cl-loading');binGet().then(bin=>{const c=bin.clienti&&bin.clienti[sid];if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}else showClSub('cl-accedi');}).catch(()=>showClSub('cl-accedi'));}
-    else showClSub('cl-accedi');
+    const sid=localStorage.getItem('cf_id');
+    if(sid){
+      showClSub('cl-loading');
+      binGet().then(bin=>{
+        const c=bin.clienti&&bin.clienti[sid];
+        if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+        else showClSub('cl-accedi');
+      }).catch(()=>showClSub('cl-accedi'));
+    }else{
+      showClSub('cl-accedi');
+    }
     return;
   }
 
-  if(!CFG.dbUrl){showView('view-setup');return;}
+  // PASSO 5: apertura diretta senza parametri URL
+  if(!CFG.dbUrl){
+    showView('view-setup');
+    return;
+  }
   showView('view-mode');
 });
 </script>
