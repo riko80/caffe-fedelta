@@ -152,6 +152,29 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
 <body>
 
 <!-- ══════════════════════════════════════
+     FIREBASE CONFIG SETUP (prima volta)
+══════════════════════════════════════ -->
+<div class="view" id="view-fb-setup">
+  <div style="max-width:440px;margin:0 auto;padding:40px 24px;text-align:center;">
+    <div style="font-size:56px;margin-bottom:14px;">☕</div>
+    <h1 style="font-size:22px;font-weight:normal;color:var(--espresso);margin-bottom:6px;">Caffè Fedeltà</h1>
+    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:24px;">Configurazione Firebase — una tantum</p>
+    <div class="card" style="text-align:left;">
+      <h2 style="margin-bottom:12px;">Inserisci la tua Firebase API Key</h2>
+      <p style="font-size:12px;color:var(--muted);font-style:italic;line-height:1.7;margin-bottom:12px;">
+        1. Vai su <a href="https://console.firebase.google.com" target="_blank" style="color:var(--crema);">console.firebase.google.com</a><br>
+        2. Impostazioni progetto → Le tue app → Web<br>
+        3. Copia la <strong>apiKey</strong> dal firebaseConfig
+      </p>
+      <label class="lbl">API Key Firebase</label>
+      <input class="inp" id="fb-apikey" type="text" placeholder="AIzaSy..." autocomplete="off" style="font-family:monospace;font-size:13px;">
+      <button class="btn btn-dark" onclick="saveFbConfig()">✅ Salva e avvia</button>
+      <p id="fb-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
      SPLASH (loading iniziale)
 ══════════════════════════════════════ -->
 <div class="view active" id="view-splash">
@@ -542,6 +565,29 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
 <!-- ══════════════════════════════════════
      FIREBASE SDK (CDN — no bundler)
 ══════════════════════════════════════ -->
+<script>
+// Estrai e salva _clienteDbUrl PRIMA che il modulo Firebase si carichi
+// Così funziona anche se il barista non è loggato
+(function() {
+  const p = new URLSearchParams(window.location.search);
+  const cp = p.get('c');
+  if (cp) {
+    try {
+      const d = JSON.parse(atob(cp));
+      if (d.u && d.u.startsWith('https://')) {
+        window._clienteDbUrl = d.u;
+        localStorage.setItem('cf_cl_db', d.u);
+      }
+    } catch(e) {}
+  }
+  // Carica anche da localStorage
+  if (!window._clienteDbUrl) {
+    const saved = localStorage.getItem('cf_cl_db');
+    if (saved) window._clienteDbUrl = saved;
+  }
+})();
+</script>
+
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
@@ -549,9 +595,17 @@ import {
   sendPasswordResetEmail, signOut, onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-// ── Config Firebase ──────────────────────────────
+// ── Config Firebase — apiKey da localStorage, mai nel codice ──
+const _stored = JSON.parse(localStorage.getItem('fb_cfg') || 'null');
+if (!_stored || !_stored.apiKey) {
+  // Mostra schermata setup e interrompi
+  document.getElementById('view-splash').classList.remove('active');
+  document.getElementById('view-fb-setup').classList.add('active');
+  window._needFbConfig = true;
+  throw new Error('firebase-config-needed');
+}
 const firebaseConfig = {
-  apiKey: "AIzaSyCqlAPxNmyEj-G0loz-JYRkJXmc6A9Jjls",
+  apiKey: _stored.apiKey,
   authDomain: "bar-tessera-fedelta.firebaseapp.com",
   databaseURL: "https://bar-tessera-fedelta-default-rtdb.firebaseio.com",
   projectId: "bar-tessera-fedelta",
@@ -607,9 +661,19 @@ let pinBuf='', clPinBuf='', clPinTarget=null;
 // ══════════════════════════════════════════════════
 // DATABASE HELPERS (Firebase REST)
 // ══════════════════════════════════════════════════
+async function getAuthToken() {
+  try {
+    if (window._fbAuth && window._fbAuth.currentUser) {
+      return await window._fbAuth.currentUser.getIdToken();
+    }
+  } catch(e){}
+  return null;
+}
+
 async function dbGet(path) {
   if (!window._dbUrl) throw new Error('Non autenticato');
-  const url = window._dbUrl + (path||'') + '.json';
+  const token = await getAuthToken();
+  const url = window._dbUrl + (path||'') + '.json' + (token ? '?auth='+token : '');
   const r = await fetch(url);
   if (!r.ok) throw new Error('DB GET ' + r.status);
   const d = await r.json();
@@ -618,15 +682,17 @@ async function dbGet(path) {
 
 async function dbSet(path, data) {
   if (!window._dbUrl) throw new Error('Non autenticato');
-  const url = window._dbUrl + (path||'') + '.json';
+  const token = await getAuthToken();
+  const url = window._dbUrl + (path||'') + '.json' + (token ? '?auth='+token : '');
   const r = await fetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-  if (!r.ok) throw new Error('DB SET ' + r.status);
+  if (!r.ok) { const t=await r.text(); throw new Error('DB SET ' + r.status + ': ' + t.slice(0,100)); }
   return data;
 }
 
 async function dbPatch(path, data) {
   if (!window._dbUrl) throw new Error('Non autenticato');
-  const url = window._dbUrl + (path||'') + '.json';
+  const token = await getAuthToken();
+  const url = window._dbUrl + (path||'') + '.json' + (token ? '?auth='+token : '');
   const r = await fetch(url, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
   if (!r.ok) throw new Error('DB PATCH ' + r.status);
   return data;
@@ -654,48 +720,43 @@ async function binPut(data) {
 // AUTH CALLBACKS (chiamate dal modulo Firebase)
 // ══════════════════════════════════════════════════
 window.onBaristaAuth = async function(user) {
-  // Legge o crea il profilo del bar
-  try {
-    let info = await dbGet('/info');
-    if (!info) {
-      // Primo accesso: crea struttura
+  // Mostra subito view-mode — non bloccare su errori DB
+  const p = new URLSearchParams(window.location.search);
+  const tok = p.get('t');
+  const cp  = p.get('c');
+
+  // Se arriva da QR, decodifica il db cliente ma vai comunque a view-mode
+  if (cp) {
+    try {
+      const d = JSON.parse(atob(cp));
+      if (d.u && d.u.startsWith('https://')) {
+        window._clienteDbUrl = d.u;
+        localStorage.setItem('cf_cl_db', d.u);
+      }
+    } catch(e){}
+  }
+
+  // Carica nome bar in background (non blocca)
+  dbGet('/info').then(info => {
+    const nomebar = (info && info.nomebar) || user.email || 'Il tuo bar';
+    document.getElementById('mode-nomebar').textContent = nomebar;
+  }).catch(() => {
+    document.getElementById('mode-nomebar').textContent = user.email || 'Il tuo bar';
+  });
+
+  // Se il nodo non esiste ancora, crealo in background
+  dbGet('').then(async data => {
+    if (!data || !data.stats) {
       await dbSet('', {
         info: { email: user.email, nomebar: '', creato: Date.now() },
         token:'', tokenTs:0, request:null, lastApproval:null,
         riscattoReq:null, riscattoApproval:null,
         clienti:{}, stats:{caffe:0,cap:0,omaggi:0,storia:[]}
       });
-      info = { nomebar: '' };
     }
-    const nomebar = (info && info.nomebar) || user.email;
-    document.getElementById('mode-nomebar').textContent = nomebar || 'Il tuo bar';
+  }).catch(e => console.warn('DB init:', e.message));
 
-    // Controlla se arriva da QR
-    const p = new URLSearchParams(window.location.search);
-    const tok = p.get('t');
-    const cp  = p.get('c');
-    const idp = p.get('id');
-
-    if (tok && cp) {
-      // URL da QR — va al cliente
-      try {
-        const d = JSON.parse(atob(cp));
-        if (d.u && d.u.startsWith('https://')) {
-          window._clienteDbUrl = d.u;
-          localStorage.setItem('cf_cl_db', d.u);
-        }
-      } catch(e){}
-      // Il barista autenticato ha scansionato il QR di se stesso? No, vai a view-mode
-      showView('view-mode');
-    } else if (cp && idp) {
-      showView('view-mode');
-    } else {
-      showView('view-mode');
-    }
-  } catch(e) {
-    console.error(e);
-    showView('view-mode');
-  }
+  showView('view-mode');
 };
 
 window.onBaristaLogout = function() {
@@ -1667,18 +1728,40 @@ function showBigToast(msg){
 // ══════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════
+function saveFbConfig() {
+  const key = document.getElementById('fb-apikey').value.trim();
+  const err = document.getElementById('fb-err');
+  if (!key || !key.startsWith('AIza')) {
+    err.textContent = "API Key non valida. Deve iniziare con 'AIza'.";
+    err.style.display = 'block';
+    return;
+  }
+  // Salva in localStorage — mai nel codice sorgente
+  localStorage.setItem('fb_cfg', JSON.stringify({
+    apiKey: key,
+    authDomain: "bar-tessera-fedelta.firebaseapp.com",
+    databaseURL: "https://bar-tessera-fedelta-default-rtdb.firebaseio.com",
+    projectId: "bar-tessera-fedelta",
+    storageBucket: "bar-tessera-fedelta.firebasestorage.app",
+    messagingSenderId: "726579087537",
+    appId: "1:726579087537:web:1af0eb4a07bb18e51aba90"
+  }));
+  window.location.reload();
+}
+
 window.addEventListener('load',()=>{
   // Carica dbUrl cliente da localStorage se presente
   const savedDb=localStorage.getItem('cf_cl_db');
   if(savedDb)window._clienteDbUrl=savedDb;
-  // onAuthStateChanged del modulo Firebase gestisce tutto il resto
-  // Se Firebase non risponde entro 5s mostra auth
+  // Se _needFbConfig è già stato impostato dal modulo, non fare nulla
+  if(window._needFbConfig) return;
+  // Se Firebase non risponde entro 6s mostra auth
   setTimeout(()=>{
     if(document.getElementById('view-splash').classList.contains('active')){
       showView('view-auth');
       showPanel('auth-login-panel');
     }
-  },5000);
+  },6000);
 });
 </script>
 </body>
