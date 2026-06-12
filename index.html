@@ -294,13 +294,6 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       </div>
       <p style="font-size:12px;color:var(--muted);font-style:italic;text-align:center;margin-top:8px;">La chiave viene salvata solo sul tuo dispositivo, mai online.</p>
     </div>
-        <label class="lbl">Incolla qui la tua API Key</label>
-        <input class="inp" id="fb-apikey" type="text" placeholder="AIzaSy..." autocomplete="off" style="font-family:monospace;font-size:13px;letter-spacing:.5px;">
-        <button class="btn btn-dark" onclick="saveFbConfig()" id="fb-save-btn">🚀 Salva e avvia l'app</button>
-        <p id="fb-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
-      </div>
-      <p style="font-size:12px;color:var(--muted);font-style:italic;text-align:center;margin-top:8px;">La chiave viene salvata solo sul tuo dispositivo, mai online.</p>
-    </div>
 
   </div>
 </div>
@@ -2204,7 +2197,7 @@ window.addEventListener('load',()=>{
   },6000);
 });
 
-// === Funzioni aggiunta manuale cliente (override pulito) ===
+// === Funzioni aggiunta manuale cliente ===
 function toggleAddClienteManuale() {
   const box = document.getElementById('b-add-cliente');
   if (!box) return;
