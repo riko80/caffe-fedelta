@@ -250,8 +250,8 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
             &nbsp;&nbsp;"rules": {<br>
             &nbsp;&nbsp;&nbsp;&nbsp;"bars": {<br>
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"$uid": {<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".read": "auth != null",<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".write": "auth != null"<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".read": true,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".write": "auth != null && auth.uid == $uid"<br>
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
             &nbsp;&nbsp;&nbsp;&nbsp;}<br>
             &nbsp;&nbsp;}<br>
@@ -1941,8 +1941,8 @@ function copyRules() {
   "rules": {
     "bars": {
       "$uid": {
-        ".read": "auth != null",
-        ".write": "auth != null"
+        ".read": true,
+        ".write": "auth != null && auth.uid == $uid"
       }
     }
   }
