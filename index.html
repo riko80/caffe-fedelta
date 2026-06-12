@@ -640,6 +640,10 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
         Notifiche
       </button>
+      <button class="nav-btn" onclick="clTab('profilo')" id="cln-profilo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Profilo
+      </button>
     </nav>
 
     <!-- PUNTI -->
@@ -706,6 +710,71 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     <!-- NOTIFICHE -->
     <div id="cl-tab-notifiche" style="display:none;max-width:480px;margin:0 auto;padding:14px;">
       <div class="card" id="cl-notif-list"><p class="empty">Nessuna notifica.</p></div>
+    </div>
+
+    <!-- PROFILO -->
+    <div id="cl-tab-profilo" style="display:none;max-width:480px;margin:0 auto;padding:14px;">
+      <div class="hdr"><span class="cup">👤</span><h1>Il mio profilo</h1></div>
+
+      <!-- Modifica dati -->
+      <div class="card">
+        <h2 style="margin-bottom:14px;">Modifica i tuoi dati</h2>
+        <label class="lbl">Nome</label>
+        <input class="inp" id="prof-nome" type="text" placeholder="es. Mario" autocomplete="given-name">
+        <label class="lbl">Cognome</label>
+        <input class="inp" id="prof-cognome" type="text" placeholder="es. Rossi" autocomplete="family-name">
+        <label class="lbl">Email</label>
+        <input class="inp" id="prof-email" type="email" placeholder="mario@email.com" autocomplete="email">
+        <button class="btn btn-dark" onclick="salvaProfilo()">💾 Salva modifiche</button>
+        <p id="prof-msg" style="font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+      </div>
+
+      <!-- Cambia PIN -->
+      <div class="card">
+        <h2 style="margin-bottom:14px;">Cambia PIN</h2>
+        <label class="lbl">PIN attuale</label>
+        <input class="inp" id="prof-pin-old" type="password" placeholder="••••" maxlength="4" inputmode="numeric">
+        <label class="lbl">Nuovo PIN (4 cifre)</label>
+        <input class="inp" id="prof-pin-new" type="password" placeholder="••••" maxlength="4" inputmode="numeric">
+        <label class="lbl">Conferma nuovo PIN</label>
+        <input class="inp" id="prof-pin-new2" type="password" placeholder="••••" maxlength="4" inputmode="numeric">
+        <button class="btn btn-ghost" onclick="cambiaPin()">🔑 Aggiorna PIN</button>
+        <p id="pin-msg" style="font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+      </div>
+
+      <!-- Aggiungi a schermata home -->
+      <div class="card" style="background:var(--espresso);border:none;">
+        <h2 style="color:var(--gold);margin-bottom:10px;">📱 Aggiungi alla schermata Home</h2>
+        <p style="font-size:13px;color:rgba(255,255,255,.7);font-style:italic;line-height:1.8;margin-bottom:14px;">
+          Installa l'app sul tuo telefono per accedere con un tocco — senza cercare il link ogni volta.
+        </p>
+        <div id="pwa-install-btn-wrap">
+          <button class="btn btn-gold" id="pwa-install-btn" onclick="installPWA()" style="display:none;">
+            📲 Installa l'app
+          </button>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border-radius:var(--rs);padding:12px;margin-top:8px;">
+          <div style="color:rgba(255,255,255,.9);font-size:13px;margin-bottom:8px;"><strong>iPhone / iPad (Safari):</strong></div>
+          <div style="color:rgba(255,255,255,.7);font-size:12px;line-height:1.8;">
+            1. Tocca il tasto <strong style="color:var(--gold);">⬆️ Condividi</strong> in basso<br>
+            2. Scorri e tocca <strong style="color:var(--gold);">"Aggiungi alla schermata Home"</strong><br>
+            3. Tocca <strong style="color:var(--gold);">"Aggiungi"</strong> in alto a destra
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border-radius:var(--rs);padding:12px;margin-top:8px;">
+          <div style="color:rgba(255,255,255,.9);font-size:13px;margin-bottom:8px;"><strong>Android (Chrome):</strong></div>
+          <div style="color:rgba(255,255,255,.7);font-size:12px;line-height:1.8;">
+            1. Tocca i <strong style="color:var(--gold);">⋮ tre puntini</strong> in alto a destra<br>
+            2. Tocca <strong style="color:var(--gold);">"Aggiungi a schermata Home"</strong><br>
+            3. Conferma con <strong style="color:var(--gold);">"Aggiungi"</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <div class="card" style="text-align:center;">
+        <button onclick="logoutCliente()" class="btn btn-ghost">🚪 Cambia account</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1861,10 +1930,11 @@ function buildStamps(id1,id2,pts,tipo){
 }
 
 function clTab(t){
-  ['punti','storico','notifiche'].forEach(x=>{
+  ['punti','storico','notifiche','profilo'].forEach(x=>{
     const el=document.getElementById('cl-tab-'+x);if(el)el.style.display=x===t?'block':'none';
     const btn=document.getElementById('cln-'+x);if(btn)btn.classList.toggle('active',x===t);
   });
+  if(t==='profilo') caricaProfilo();
 }
 
 function logoutCliente(){
@@ -1872,6 +1942,78 @@ function logoutCliente(){
   localStorage.removeItem('cf_id');
   localStorage.removeItem('cf_email');
   showClSub('cl-accedi');
+}
+
+function caricaProfilo(){
+  if(!curCId||!window._clienteDbUrl)return;
+  clBinGet().then(bin=>{
+    const c=bin.clienti&&bin.clienti[curCId];
+    if(!c)return;
+    document.getElementById('prof-nome').value=c.nome||'';
+    document.getElementById('prof-cognome').value=c.cognome||'';
+    document.getElementById('prof-email').value=c.email||'';
+  }).catch(()=>{});
+}
+
+async function salvaProfilo(){
+  const nome=document.getElementById('prof-nome').value.trim();
+  const cognome=document.getElementById('prof-cognome').value.trim();
+  const email=document.getElementById('prof-email').value.trim().toLowerCase();
+  const msg=document.getElementById('prof-msg');
+  msg.style.display='none';
+  if(!nome){msg.textContent='Inserisci il nome.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  if(!email||!email.includes('@')){msg.textContent='Email non valida.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  try{
+    const bin=await clBinGet();
+    if(!bin.clienti[curCId])return;
+    bin.clienti[curCId].nome=nome;
+    bin.clienti[curCId].cognome=cognome;
+    bin.clienti[curCId].email=email;
+    await clBinPut(bin);
+    localStorage.setItem('cf_email',email);
+    // Aggiorna badge
+    renderUBadge('cl-carta-badge',bin.clienti[curCId]);
+    msg.textContent='✅ Dati aggiornati!';msg.style.color='var(--success)';msg.style.display='block';
+    setTimeout(()=>msg.style.display='none',3000);
+  }catch(e){msg.textContent='Errore: '+e.message;msg.style.color='var(--danger)';msg.style.display='block';}
+}
+
+async function cambiaPin(){
+  const oldPin=document.getElementById('prof-pin-old').value.trim();
+  const newPin=document.getElementById('prof-pin-new').value.trim();
+  const newPin2=document.getElementById('prof-pin-new2').value.trim();
+  const msg=document.getElementById('pin-msg');
+  msg.style.display='none';
+  if(!oldPin||!newPin||!newPin2){msg.textContent='Compila tutti i campi.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  if(newPin.length<4){msg.textContent='Il nuovo PIN deve essere di 4 cifre.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  if(newPin!==newPin2){msg.textContent='I due PIN non corrispondono.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  try{
+    const bin=await clBinGet();
+    const c=bin.clienti&&bin.clienti[curCId];
+    if(!c){msg.textContent='Cliente non trovato.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+    if(c.pin!==oldPin){msg.textContent='PIN attuale errato.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+    bin.clienti[curCId].pin=newPin;
+    await clBinPut(bin);
+    document.getElementById('prof-pin-old').value='';
+    document.getElementById('prof-pin-new').value='';
+    document.getElementById('prof-pin-new2').value='';
+    msg.textContent='✅ PIN aggiornato!';msg.style.color='var(--success)';msg.style.display='block';
+    setTimeout(()=>msg.style.display='none',3000);
+  }catch(e){msg.textContent='Errore: '+e.message;msg.style.color='var(--danger)';msg.style.display='block';}
+}
+
+// PWA install prompt
+let _pwaPrompt=null;
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  _pwaPrompt=e;
+  const btn=document.getElementById('pwa-install-btn');
+  if(btn)btn.style.display='flex';
+});
+function installPWA(){
+  if(!_pwaPrompt)return;
+  _pwaPrompt.prompt();
+  _pwaPrompt.userChoice.then(()=>{_pwaPrompt=null;});
 }
 
 // ══════════════════════════════════════════════════
