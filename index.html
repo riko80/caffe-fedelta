@@ -1281,13 +1281,13 @@ function checkOmaggiAlert(bin) {
       if((c.puntiC||0)>=OM){
         html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid rgba(212,168,83,.3);">'
           +'<span style="font-size:13px;"><b>'+(id?id+' — ':'')+nc+'</b> · ☕ caffè</span>'
-          +'<button onclick="approvaRiscattoManuale(''+c.id+'','caffe')" style="background:var(--gold);border:none;color:white;padding:5px 10px;border-radius:var(--rs);font-family:Georgia,serif;font-size:12px;cursor:pointer;">🎁 Riscatta</button>'
+          +'<button onclick="approvaRiscattoManuale(''+c.id+'\','caffe')" style="background:var(--gold);border:none;color:white;padding:5px 10px;border-radius:var(--rs);font-family:Georgia,serif;font-size:12px;cursor:pointer;">🎁 Riscatta</button>'
           +'</div>';
       }
       if((c.puntiK||0)>=OM){
         html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid rgba(212,168,83,.3);">'
           +'<span style="font-size:13px;"><b>'+(id?id+' — ':'')+nc+'</b> · 🥛 cappuccino</span>'
-          +'<button onclick="approvaRiscattoManuale(''+c.id+'','cappuccino')" style="background:var(--gold);border:none;color:white;padding:5px 10px;border-radius:var(--rs);font-family:Georgia,serif;font-size:12px;cursor:pointer;">🎁 Riscatta</button>'
+          +'<button onclick="approvaRiscattoManuale(''+c.id+'\','cappuccino')" style="background:var(--gold);border:none;color:white;padding:5px 10px;border-radius:var(--rs);font-family:Georgia,serif;font-size:12px;cursor:pointer;">🎁 Riscatta</button>'
           +'</div>';
       }
     });
