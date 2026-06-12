@@ -478,9 +478,12 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <span class="search-ico">🔍</span>
       <input class="search-inp" id="b-search" type="text" placeholder="Cerca nome, cognome, email o tessera..." oninput="filterClienti(this.value)">
     </div>
-    <div id="b-omaggi-alert" style="display:none;" class="alert alert-gold">
-      <div class="ai">🎁</div>
-      <p><strong>Omaggi disponibili</strong><span id="b-omaggi-nomi"></span></p>
+    <div id="b-omaggi-alert" style="display:none;background:#fffdf0;border:2px solid var(--gold);border-radius:var(--r);padding:14px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="font-size:22px;">🎁</span>
+        <strong style="color:var(--dark-gold);font-size:14px;">Omaggi disponibili</strong>
+      </div>
+      <div id="b-omaggi-nomi"></div>
     </div>
     <div class="card" id="clienti-list"><p class="empty">Nessun cliente ancora.</p></div>
   </div>
@@ -640,6 +643,10 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
         Notifiche
       </button>
+      <button class="nav-btn" onclick="clTab('profilo')" id="cln-profilo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Profilo
+      </button>
     </nav>
 
     <!-- PUNTI -->
@@ -706,6 +713,71 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     <!-- NOTIFICHE -->
     <div id="cl-tab-notifiche" style="display:none;max-width:480px;margin:0 auto;padding:14px;">
       <div class="card" id="cl-notif-list"><p class="empty">Nessuna notifica.</p></div>
+    </div>
+
+    <!-- PROFILO -->
+    <div id="cl-tab-profilo" style="display:none;max-width:480px;margin:0 auto;padding:14px;">
+      <div class="hdr"><span class="cup">👤</span><h1>Il mio profilo</h1></div>
+
+      <!-- Modifica dati -->
+      <div class="card">
+        <h2 style="margin-bottom:14px;">Modifica i tuoi dati</h2>
+        <label class="lbl">Nome</label>
+        <input class="inp" id="prof-nome" type="text" placeholder="es. Mario" autocomplete="given-name">
+        <label class="lbl">Cognome</label>
+        <input class="inp" id="prof-cognome" type="text" placeholder="es. Rossi" autocomplete="family-name">
+        <label class="lbl">Email</label>
+        <input class="inp" id="prof-email" type="email" placeholder="mario@email.com" autocomplete="email">
+        <button class="btn btn-dark" onclick="salvaProfilo()">💾 Salva modifiche</button>
+        <p id="prof-msg" style="font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+      </div>
+
+      <!-- Cambia PIN -->
+      <div class="card">
+        <h2 style="margin-bottom:14px;">Cambia PIN</h2>
+        <label class="lbl">PIN attuale</label>
+        <input class="inp" id="prof-pin-old" type="password" placeholder="••••" maxlength="4" inputmode="numeric">
+        <label class="lbl">Nuovo PIN (4 cifre)</label>
+        <input class="inp" id="prof-pin-new" type="password" placeholder="••••" maxlength="4" inputmode="numeric">
+        <label class="lbl">Conferma nuovo PIN</label>
+        <input class="inp" id="prof-pin-new2" type="password" placeholder="••••" maxlength="4" inputmode="numeric">
+        <button class="btn btn-ghost" onclick="cambiaPin()">🔑 Aggiorna PIN</button>
+        <p id="pin-msg" style="font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+      </div>
+
+      <!-- Aggiungi a schermata home -->
+      <div class="card" style="background:var(--espresso);border:none;">
+        <h2 style="color:var(--gold);margin-bottom:10px;">📱 Aggiungi alla schermata Home</h2>
+        <p style="font-size:13px;color:rgba(255,255,255,.7);font-style:italic;line-height:1.8;margin-bottom:14px;">
+          Installa l'app sul tuo telefono per accedere con un tocco — senza cercare il link ogni volta.
+        </p>
+        <div id="pwa-install-btn-wrap">
+          <button class="btn btn-gold" id="pwa-install-btn" onclick="installPWA()" style="display:none;">
+            📲 Installa l'app
+          </button>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border-radius:var(--rs);padding:12px;margin-top:8px;">
+          <div style="color:rgba(255,255,255,.9);font-size:13px;margin-bottom:8px;"><strong>iPhone / iPad (Safari):</strong></div>
+          <div style="color:rgba(255,255,255,.7);font-size:12px;line-height:1.8;">
+            1. Tocca il tasto <strong style="color:var(--gold);">⬆️ Condividi</strong> in basso<br>
+            2. Scorri e tocca <strong style="color:var(--gold);">"Aggiungi alla schermata Home"</strong><br>
+            3. Tocca <strong style="color:var(--gold);">"Aggiungi"</strong> in alto a destra
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border-radius:var(--rs);padding:12px;margin-top:8px;">
+          <div style="color:rgba(255,255,255,.9);font-size:13px;margin-bottom:8px;"><strong>Android (Chrome):</strong></div>
+          <div style="color:rgba(255,255,255,.7);font-size:12px;line-height:1.8;">
+            1. Tocca i <strong style="color:var(--gold);">⋮ tre puntini</strong> in alto a destra<br>
+            2. Tocca <strong style="color:var(--gold);">"Aggiungi a schermata Home"</strong><br>
+            3. Conferma con <strong style="color:var(--gold);">"Aggiungi"</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <div class="card" style="text-align:center;">
+        <button onclick="logoutCliente()" class="btn btn-ghost">🚪 Cambia account</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1201,15 +1273,25 @@ function checkOmaggiAlert(bin) {
   const pronti=clienti.filter(c=>(c.puntiC||0)>=OM||(c.puntiK||0)>=OM);
   const alertEl=document.getElementById('b-omaggi-alert');
   if(pronti.length){
-    alertEl.style.display='flex';
-    document.getElementById('b-omaggi-nomi').innerHTML=' '+pronti.map(c=>{
-      const parts=[];
-      const id=c.numId?'<b>'+String(c.numId).padStart(4,'0')+'</b> ':'';
+    alertEl.style.display='block';
+    let html='';
+    pronti.forEach(c=>{
+      const id=c.numId?String(c.numId).padStart(4,'0'):'';
       const nc=((c.nome||'')+' '+(c.cognome||'')).trim();
-      if((c.puntiC||0)>=OM)parts.push(id+nc+' <b>(☕ caffè)</b>');
-      if((c.puntiK||0)>=OM)parts.push(id+nc+' <b>(🥛 cappuccino)</b>');
-      return parts.join(', ');
-    }).join(' — ');
+      if((c.puntiC||0)>=OM){
+        html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid rgba(212,168,83,.3);">'
+          +'<span style="font-size:13px;"><b>'+(id?id+' — ':'')+nc+'</b> · ☕ caffè</span>'
+          +'<button onclick="approvaRiscattoManuale(''+c.id+'','caffe')" style="background:var(--gold);border:none;color:white;padding:5px 10px;border-radius:var(--rs);font-family:Georgia,serif;font-size:12px;cursor:pointer;">🎁 Riscatta</button>'
+          +'</div>';
+      }
+      if((c.puntiK||0)>=OM){
+        html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid rgba(212,168,83,.3);">'
+          +'<span style="font-size:13px;"><b>'+(id?id+' — ':'')+nc+'</b> · 🥛 cappuccino</span>'
+          +'<button onclick="approvaRiscattoManuale(''+c.id+'','cappuccino')" style="background:var(--gold);border:none;color:white;padding:5px 10px;border-radius:var(--rs);font-family:Georgia,serif;font-size:12px;cursor:pointer;">🎁 Riscatta</button>'
+          +'</div>';
+      }
+    });
+    document.getElementById('b-omaggi-nomi').innerHTML=html;
   } else {
     alertEl.style.display='none';
   }
@@ -1273,6 +1355,29 @@ async function rifiutaConsumo(){
     document.getElementById('approv-cons').classList.remove('show');
     setTimeout(()=>forceQR(),8000);
   } catch(e){}
+}
+
+async function approvaRiscattoManuale(cid, tipo){
+  if(!confirm('Approvare omaggio '+tipo+' per questo cliente?'))return;
+  try{
+    const bin=await binGet();
+    if(!bin.clienti[cid])return;
+    const c=bin.clienti[cid];
+    if(!Array.isArray(c.storia))c.storia=[];
+    if(!Array.isArray(c.notifiche))c.notifiche=[];
+    if(tipo==='caffe')c.puntiC=0;else c.puntiK=0;
+    c.totOmaggi=(c.totOmaggi||0)+1;
+    c.storia.unshift({tipo:'omaggio-'+tipo,ts:Date.now()});
+    if(!Array.isArray(bin.stats.storia))bin.stats.storia=[];
+    bin.stats.omaggi=(bin.stats.omaggi||0)+1;
+    bin.stats.storia.unshift({tipo:'omaggio-'+tipo,ts:Date.now()});
+    pushNotif(c,'gold','🎁 Il barista ha approvato il tuo omaggio '+tipo+'! Buona consumazione.');
+    // Segnale al cliente
+    bin.riscattoApproval={cid,ts:Date.now(),denied:false,tipo};
+    await binPut(bin);
+    showToast('🎁 Omaggio '+tipo+' approvato per '+((c.nome||'')+' '+(c.cognome||'')).trim()+'!');
+    updBStats();
+  }catch(e){showToast('❌ Errore: '+e.message);}
 }
 
 async function approvaRiscatto(){
@@ -1602,22 +1707,18 @@ function checkClPin(){
     return;
   }
   if(clPinBuf===clPinTarget.pin){
-    curCId=clPinTarget.id;
-    localStorage.setItem('cf_id',clPinTarget.id);
+    const _pinId=clPinTarget.id;
+    curCId=_pinId;
+    localStorage.setItem('cf_id',_pinId);
     localStorage.setItem('cf_email',clPinTarget.email||'');
-    // Ricarica dati freschi dal database prima di mostrare la carta
+    clPinTarget=null;clPinBuf='';
+    // Ricarica SEMPRE dati freschi dal database
     showClSub('cl-loading');
     clBinGet().then(bin=>{
-      const c=bin.clienti&&bin.clienti[clPinTarget.id];
+      const c=bin.clienti&&bin.clienti[_pinId];
       if(c){renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
       else{showClSub('cl-accedi');}
-      clPinTarget=null;clPinBuf='';
-    }).catch(()=>{
-      // Fallback: usa dati in memoria
-      renderCartaCliente(clPinTarget);
-      showClSub('cl-carta');clTab('punti');
-      clPinTarget=null;clPinBuf='';
-    });
+    }).catch(()=>{showClSub('cl-accedi');});
   } else {
     document.getElementById('cl-pin-err').textContent='PIN errato. Riprova.';
     clPinBuf='';updateClPinDots();
@@ -1861,10 +1962,11 @@ function buildStamps(id1,id2,pts,tipo){
 }
 
 function clTab(t){
-  ['punti','storico','notifiche'].forEach(x=>{
+  ['punti','storico','notifiche','profilo'].forEach(x=>{
     const el=document.getElementById('cl-tab-'+x);if(el)el.style.display=x===t?'block':'none';
     const btn=document.getElementById('cln-'+x);if(btn)btn.classList.toggle('active',x===t);
   });
+  if(t==='profilo') caricaProfilo();
 }
 
 function logoutCliente(){
@@ -1872,6 +1974,78 @@ function logoutCliente(){
   localStorage.removeItem('cf_id');
   localStorage.removeItem('cf_email');
   showClSub('cl-accedi');
+}
+
+function caricaProfilo(){
+  if(!curCId||!window._clienteDbUrl)return;
+  clBinGet().then(bin=>{
+    const c=bin.clienti&&bin.clienti[curCId];
+    if(!c)return;
+    document.getElementById('prof-nome').value=c.nome||'';
+    document.getElementById('prof-cognome').value=c.cognome||'';
+    document.getElementById('prof-email').value=c.email||'';
+  }).catch(()=>{});
+}
+
+async function salvaProfilo(){
+  const nome=document.getElementById('prof-nome').value.trim();
+  const cognome=document.getElementById('prof-cognome').value.trim();
+  const email=document.getElementById('prof-email').value.trim().toLowerCase();
+  const msg=document.getElementById('prof-msg');
+  msg.style.display='none';
+  if(!nome){msg.textContent='Inserisci il nome.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  if(!email||!email.includes('@')){msg.textContent='Email non valida.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  try{
+    const bin=await clBinGet();
+    if(!bin.clienti[curCId])return;
+    bin.clienti[curCId].nome=nome;
+    bin.clienti[curCId].cognome=cognome;
+    bin.clienti[curCId].email=email;
+    await clBinPut(bin);
+    localStorage.setItem('cf_email',email);
+    // Aggiorna badge
+    renderUBadge('cl-carta-badge',bin.clienti[curCId]);
+    msg.textContent='✅ Dati aggiornati!';msg.style.color='var(--success)';msg.style.display='block';
+    setTimeout(()=>msg.style.display='none',3000);
+  }catch(e){msg.textContent='Errore: '+e.message;msg.style.color='var(--danger)';msg.style.display='block';}
+}
+
+async function cambiaPin(){
+  const oldPin=document.getElementById('prof-pin-old').value.trim();
+  const newPin=document.getElementById('prof-pin-new').value.trim();
+  const newPin2=document.getElementById('prof-pin-new2').value.trim();
+  const msg=document.getElementById('pin-msg');
+  msg.style.display='none';
+  if(!oldPin||!newPin||!newPin2){msg.textContent='Compila tutti i campi.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  if(newPin.length<4){msg.textContent='Il nuovo PIN deve essere di 4 cifre.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  if(newPin!==newPin2){msg.textContent='I due PIN non corrispondono.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  try{
+    const bin=await clBinGet();
+    const c=bin.clienti&&bin.clienti[curCId];
+    if(!c){msg.textContent='Cliente non trovato.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+    if(c.pin!==oldPin){msg.textContent='PIN attuale errato.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+    bin.clienti[curCId].pin=newPin;
+    await clBinPut(bin);
+    document.getElementById('prof-pin-old').value='';
+    document.getElementById('prof-pin-new').value='';
+    document.getElementById('prof-pin-new2').value='';
+    msg.textContent='✅ PIN aggiornato!';msg.style.color='var(--success)';msg.style.display='block';
+    setTimeout(()=>msg.style.display='none',3000);
+  }catch(e){msg.textContent='Errore: '+e.message;msg.style.color='var(--danger)';msg.style.display='block';}
+}
+
+// PWA install prompt
+let _pwaPrompt=null;
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  _pwaPrompt=e;
+  const btn=document.getElementById('pwa-install-btn');
+  if(btn)btn.style.display='flex';
+});
+function installPWA(){
+  if(!_pwaPrompt)return;
+  _pwaPrompt.prompt();
+  _pwaPrompt.userChoice.then(()=>{_pwaPrompt=null;});
 }
 
 // ══════════════════════════════════════════════════
