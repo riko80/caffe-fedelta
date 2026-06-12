@@ -9,6 +9,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Caffè Fedeltà">
+<link id="pwa-manifest" rel="manifest" href="">
+<link id="pwa-icon" rel="apple-touch-icon" href="">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -387,12 +389,15 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <div style="font-size:17px;margin-bottom:3px;">Sono il Barista</div>
       <div style="font-size:12px;opacity:.7;font-style:italic;">Genera QR e gestisci i clienti</div>
     </button>
-    <button onclick="accessoClienteEmail()" style="width:100%;max-width:300px;padding:22px;border-radius:var(--r);border:1px solid var(--latte);font-family:'Georgia',serif;cursor:pointer;background:white;color:var(--text);box-shadow:0 4px 16px rgba(44,24,16,.1);text-align:center;margin-bottom:14px;">
+    <button onclick="accessoClienteEmail()" style="width:100%;max-width:300px;padding:22px;border-radius:var(--r);border:1px solid var(--latte);font-family:'Georgia',serif;cursor:pointer;background:white;color:var(--text);box-shadow:0 4px 16px rgba(44,24,16,.1);text-align:center;margin-bottom:10px;">
       <span style="font-size:36px;display:block;margin-bottom:8px;">👤</span>
       <div style="font-size:17px;margin-bottom:3px;">Sono un Cliente</div>
       <div style="font-size:12px;opacity:.6;font-style:italic;">Scansiona il QR · Accumula punti</div>
     </button>
-    <button onclick="doLogout()" style="background:none;border:none;color:var(--muted);font-size:11px;font-style:italic;cursor:pointer;margin-top:8px;text-decoration:underline;font-family:'Georgia',serif;">Esci dall'account →</button>
+    <button onclick="accessoClienteEmail()" style="width:100%;max-width:300px;padding:14px;border-radius:var(--r);border:2px solid var(--crema);font-family:'Georgia',serif;cursor:pointer;background:var(--foam);color:var(--crema);text-align:center;margin-bottom:14px;font-size:14px;">
+      🔑 Già cliente? Accedi con email o tessera
+    </button>
+    <button onclick="doLogout()" style="background:none;border:none;color:var(--muted);font-size:11px;font-style:italic;cursor:pointer;margin-top:4px;text-decoration:underline;font-family:'Georgia',serif;">Esci dall'account →</button>
   </div>
 </div>
 
@@ -515,27 +520,34 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     <div style="text-align:center;margin-bottom:20px;">
       <div style="font-size:50px;margin-bottom:9px;">☕</div>
       <h1 style="font-size:22px;font-weight:normal;color:var(--espresso);margin-bottom:5px;">La mia carta fedeltà</h1>
-      <p style="font-size:13px;color:var(--muted);font-style:italic;">Accedi con la tua email e PIN</p>
     </div>
+
     <div id="cl-bar-status" style="display:none;background:var(--sbg);border:1px solid #a5d6a7;border-radius:var(--rs);padding:9px 13px;font-size:12px;color:var(--success);font-style:italic;margin-bottom:12px;text-align:center;">
       ✅ Bar collegato
     </div>
-    <div id="cl-nobar-status" style="display:none;background:var(--dbg);border:1px solid #f5c6c6;border-radius:var(--rs);padding:9px 13px;font-size:12px;color:var(--danger);font-style:italic;margin-bottom:12px;text-align:center;">
-      ⚠️ Bar non collegato — scansiona prima il QR del barista
+    <div id="cl-nobar-status" style="display:none;background:#fff8e8;border:1px solid var(--gold);border-radius:var(--rs);padding:9px 13px;font-size:12px;color:var(--dark-gold);font-style:italic;margin-bottom:12px;text-align:center;">
+      ℹ️ Prima volta? Scansiona il QR del tuo bar per collegarlo
     </div>
-    <div class="card">
-      <label class="lbl">Email</label>
-      <input class="inp" id="acc-email" type="email" placeholder="mario@email.com" autocomplete="email">
-      <button class="btn btn-dark" id="acc-btn" onclick="accediConEmail()">☕ Accedi alla mia carta</button>
-      <p id="acc-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:3px;display:none;"></p>
+
+    <!-- SEZIONE: GIÀ CLIENTE -->
+    <div style="background:var(--espresso);border-radius:var(--r);padding:16px 18px;margin-bottom:14px;">
+      <div style="color:var(--gold);font-size:15px;margin-bottom:14px;">🔑 Sei già cliente?</div>
+      <label class="lbl" style="color:rgba(255,255,255,.7);">La tua email</label>
+      <input class="inp" id="acc-email" type="email" placeholder="mario@email.com" autocomplete="email" style="margin-bottom:10px;">
+      <button class="btn btn-gold" id="acc-btn" onclick="accediConEmail()" style="margin-bottom:6px;">☕ Accedi con email</button>
+      <div style="text-align:center;color:rgba(255,255,255,.5);font-size:12px;margin:8px 0;">oppure</div>
+      <label class="lbl" style="color:rgba(255,255,255,.7);">Numero tessera</label>
+      <input class="inp" id="acc-id" type="number" placeholder="es. 42" inputmode="numeric" style="margin-bottom:10px;">
+      <button class="btn btn-ghost" id="acc-id-btn" onclick="accediConId()" style="border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.8);">🔢 Accedi con numero tessera</button>
+      <p id="acc-err" style="color:#ffb3b3;font-size:13px;font-style:italic;margin-top:6px;display:none;"></p>
     </div>
-    <div style="text-align:center;margin:8px 0 14px;font-size:13px;color:var(--muted);">oppure</div>
-    <div class="card">
-      <label class="lbl">Numero tessera</label>
-      <input class="inp" id="acc-id" type="number" placeholder="es. 42" inputmode="numeric">
-      <button class="btn btn-ghost" id="acc-id-btn" onclick="accediConId()">🔢 Accedi con numero tessera</button>
+
+    <!-- SEZIONE: PRIMO ACCESSO -->
+    <div style="background:white;border-radius:var(--r);border:1px solid var(--latte);padding:16px 18px;text-align:center;">
+      <div style="font-size:14px;color:var(--espresso);margin-bottom:6px;">🆕 Prima volta al bar?</div>
+      <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px;line-height:1.6;">Chiedi al barista di mostrarti il QR code.<br>Scansionalo per registrarti in 30 secondi.</p>
+      <div style="font-size:11px;color:var(--muted);font-style:italic;">📱 Usa la fotocamera del tuo telefono</div>
     </div>
-    <p style="text-align:center;font-size:12px;color:var(--muted);font-style:italic;margin-top:8px;">Non sei ancora registrato? Scansiona il QR al bar!</p>
   </div>
 
   <!-- PIN cliente (dopo email trovata) -->
@@ -1981,6 +1993,24 @@ window.addEventListener('load',()=>{
   // Carica dbUrl cliente da localStorage se presente
   const savedDb=localStorage.getItem('cf_cl_db');
   if(savedDb)window._clienteDbUrl=savedDb;
+
+  // PWA Manifest — installabile come app su Android e iOS
+  const icon = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%232C1810"/><text y=".9em" font-size="80" x="10">☕</text></svg>';
+  const manifest = {
+    name: 'Caffè Fedeltà',
+    short_name: 'CaffèFedeltà',
+    description: 'La tua carta fedeltà digitale',
+    start_url: window.location.pathname,
+    display: 'standalone',
+    background_color: '#FAF3EC',
+    theme_color: '#2C1810',
+    orientation: 'portrait',
+    icons: [{src:icon, sizes:'192x192', type:'image/svg+xml'},{src:icon, sizes:'512x512', type:'image/svg+xml'}]
+  };
+  const mBlob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+  const mUrl = URL.createObjectURL(mBlob);
+  document.getElementById('pwa-manifest').href = mUrl;
+  document.getElementById('pwa-icon').href = icon;
   // Se è cliente senza Firebase, inizializza il flusso cliente
   if(window._isClienteOnly) {
     const p2 = new URLSearchParams(window.location.search);
