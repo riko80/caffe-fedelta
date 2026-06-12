@@ -1156,17 +1156,19 @@ function startBPoll() {
     try {
       const bin=await binGet(); setConn(true);
       // Richiesta consumazione
-      if(bin.request && bin.request.token===curToken) {
+      // Mostra pannello per qualsiasi richiesta recente (ultimi 3 minuti)
+      // Non solo quella col token corrente — il cliente potrebbe impiegare tempo a registrarsi
+      if(bin.request && bin.request.clienteId && (Date.now()-(bin.request.ts||0))<180000) {
         const c=bin.clienti&&bin.request.clienteId?bin.clienti[bin.request.clienteId]:null;
         const idStr=c&&c.numId?String(c.numId).padStart(4,'0'):'';
         const nc=c?((c.nome||'')+' '+(c.cognome||'')).trim():'Cliente';
         document.getElementById('approv-who').textContent=
-          (idStr?idStr+' — ':'')+nc+(c?' (☕'+Math.max(0,OM-(c.puntiC||0))+'mancano al prossimo caffè)':'');
+          (idStr?idStr+' — ':'')+nc+(c?' · ☕'+Math.max(0,OM-(c.puntiC||0))+' mancano':'');
         document.getElementById('approv-cons').classList.add('show');
         bTab('qr');
       }
       // Richiesta riscatto
-      if(bin.riscattoReq && bin.riscattoReq.token===curToken) {
+      if(bin.riscattoReq && bin.riscattoReq.clienteId && (Date.now()-(bin.riscattoReq.ts||0))<180000) {
         const c=bin.clienti&&bin.riscattoReq.clienteId?bin.clienti[bin.riscattoReq.clienteId]:null;
         const idStr=c&&c.numId?String(c.numId).padStart(4,'0'):'';
         const nc=c?((c.nome||'')+' '+(c.cognome||'')).trim():'Cliente';
@@ -1222,7 +1224,7 @@ async function approvaConsumo(){
   try {
     const bin=await binGet();
     const req=bin.request;
-    if(!req){showToast('⚠️ Richiesta scaduta');document.getElementById('approv-cons').classList.remove('show');return;}
+    if(!req||!req.clienteId){showToast('⚠️ Nessuna richiesta attiva');document.getElementById('approv-cons').classList.remove('show');return;}
     const cid=req.clienteId;
     if(cid&&bin.clienti[cid]){
       const c=bin.clienti[cid];
@@ -1711,7 +1713,7 @@ async function registerCliente(){
 }
 
 async function sendRequest(bin,clienteId){
-  bin.request={token:pendingToken,clienteId,ts:Date.now()};
+  bin.request={token:pendingToken,clienteId,ts:Date.now(),active:true};
   bin.lastApproval=null;
   await clBinPut(bin);
   const c=bin.clienti[clienteId];
