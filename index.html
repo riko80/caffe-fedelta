@@ -277,16 +277,15 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
         <div style="background:var(--foam);border-radius:var(--rs);padding:14px;margin-bottom:14px;">
           <div style="font-size:13px;color:var(--text);line-height:2.1;">
             <b>1.</b> Clicca il bottone qui sotto<br>
-            <b>2.</b> Clicca l'icona ⚙️ <b>"Impostazioni progetto"</b> (in alto a sinistra)<br>
-            <b>3.</b> Scorri in basso fino a <b>"Le tue app"</b><br>
-            <b>4.</b> Se non hai app web: clicca <b>"&lt;/&gt;"</b> → nome <code style="background:var(--latte);padding:2px 6px;border-radius:4px;">caffefedelta</code> → Registra<br>
-            <b>5.</b> Trova il campo <b>apiKey</b> nel codice mostrato<br>
-            <b>6.</b> Copia il valore (inizia con <code style="background:var(--latte);padding:2px 6px;border-radius:4px;">AIzaSy...</code>)<br>
-            <b>7.</b> Incollalo qui sotto 👇
+            <b>2.</b> Verifica che il progetto selezionato sia <code style="background:var(--latte);padding:2px 6px;border-radius:4px;">bar-tessera-fedelta</code><br>
+            <b>3.</b> Vai su <b>API e servizi → Credenziali</b><br>
+            <b>4.</b> Nella sezione <b>Chiavi API</b> apri la chiave usata per l'app web<br>
+            <b>5.</b> Copia il valore della chiave (inizia con <code style="background:var(--latte);padding:2px 6px;border-radius:4px;">AIza...</code>)<br>
+            <b>6.</b> Incollalo qui sotto 👇
           </div>
         </div>
-        <a href="https://console.firebase.google.com" target="_blank" class="btn btn-ghost" style="text-decoration:none;display:flex;margin-bottom:14px;">
-          ⚙️ Apri Impostazioni Firebase
+        <a href="https://console.cloud.google.com/apis/credentials?project=bar-tessera-fedelta" target="_blank" class="btn btn-ghost" style="text-decoration:none;display:flex;margin-bottom:14px;">
+          🔑 Apri Google Cloud – Credenziali API
         </a>
         <label class="lbl">Incolla qui la tua API Key</label>
         <input class="inp" id="fb-apikey" type="text" placeholder="AIzaSy..." autocomplete="off" style="font-family:monospace;font-size:13px;letter-spacing:.5px;">
@@ -363,7 +362,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     <div style="font-size:56px;margin-bottom:14px;">☕</div>
     <h1 style="font-size:26px;font-weight:normal;color:var(--espresso);margin-bottom:6px;">Caffè Fedeltà</h1>
     <p id="mode-nomebar" style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:32px;"></p>
-    <button onclick="enterBarista()" style="width:100%;max-width:300px;padding:22px;border-radius:var(--r);border:none;font-family:'Georgia',serif;cursor:pointer;background:var(--espresso);color:white;box-shadow:0 4px 20px rgba(44,24,16,.25);text-align:center;margin-bottom:14px;">
+    <button onclick="showView('view-auth');showPanel('auth-login-panel')" style="width:100%;max-width:300px;padding:22px;border-radius:var(--r);border:none;font-family:'Georgia',serif;cursor:pointer;background:var(--espresso);color:white;box-shadow:0 4px 20px rgba(44,24,16,.25);text-align:center;margin-bottom:14px;">
       <span style="font-size:36px;display:block;margin-bottom:8px;">👨‍💼</span>
       <div style="font-size:17px;margin-bottom:3px;">Sono il Barista</div>
       <div style="font-size:12px;opacity:.7;font-style:italic;">Genera QR e gestisci i clienti</div>
@@ -376,7 +375,6 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     <button onclick="accessoClienteEmail()" style="width:100%;max-width:300px;padding:14px;border-radius:var(--r);border:2px solid var(--crema);font-family:'Georgia',serif;cursor:pointer;background:var(--foam);color:var(--crema);text-align:center;margin-bottom:14px;font-size:14px;">
       🔑 Già cliente? Accedi con email o tessera
     </button>
-    <button onclick="doLogout()" style="background:none;border:none;color:var(--muted);font-size:11px;font-style:italic;cursor:pointer;margin-top:4px;text-decoration:underline;font-family:'Georgia',serif;">Esci dall'account →</button>
   </div>
 </div>
 
@@ -394,11 +392,14 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 20h18M8 20V10M12 20V4M16 20v-6"/></svg>
       Stats
     </button>
-    <button class="nav-btn" onclick="showView('view-mode')" style="color:rgba(255,255,255,.4);font-size:10px;">
+    <button class="nav-btn" onclick="showView('view-mode')" id="bnav-home" style="color:rgba(255,255,255,.4);font-size:10px;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 16l4-4m0 0l-4-4m4 4H7"/></svg>
-      Esci
+      Home
     </button>
   </nav>
+  <div style="background:var(--espresso);color:rgba(255,255,255,.7);font-size:11px;padding:4px 12px;font-style:italic;">
+    Bar attivo: <span id="b-barname">—</span>
+  </div>
 
   <div class="page active" id="bpage-qr">
     <div class="approv" id="approv-cons">
@@ -448,6 +449,25 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
 
   <div class="page" id="bpage-clienti">
     <div class="hdr"><span class="cup">👥</span><h1>Clienti registrati</h1></div>
+
+    <button class="btn btn-dark" style="margin-bottom:10px;width:100%;max-width:320px;margin-inline:auto;" onclick="toggleAddClienteManuale()">
+      ➕ Aggiungi cliente manualmente
+    </button>
+
+    <div class="card" id="b-add-cliente" style="display:none;">
+      <h2>Nuovo cliente</h2>
+      <label class="lbl">Nome</label>
+      <input class="inp" id="b-add-nome" type="text" placeholder="es. Mario">
+      <label class="lbl">Cognome</label>
+      <input class="inp" id="b-add-cognome" type="text" placeholder="es. Rossi">
+      <label class="lbl">Email</label>
+      <input class="inp" id="b-add-email" type="email" placeholder="mario@email.com">
+      <label class="lbl">PIN iniziale (4 cifre)</label>
+      <input class="inp" id="b-add-pin" type="password" maxlength="4" placeholder="es. 1234" inputmode="numeric">
+      <button class="btn btn-success" onclick="salvaClienteManuale()">💾 Salva cliente</button>
+      <p id="b-add-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+    </div>
+
     <div class="search-wrap">
       <span class="search-ico">🔍</span>
       <input class="search-inp" id="b-search" type="text" placeholder="Cerca nome, cognome, email o tessera..." oninput="filterClienti(this.value)">
@@ -813,7 +833,6 @@ onAuthStateChanged(auth, (user) => {
     window._currentUser = user;
     window._barId = user.uid;
     window._dbUrl = firebaseConfig.databaseURL + '/bars/' + user.uid;
-    // Carica nome bar e mostra view-mode
     window.onBaristaAuth(user);
   } else {
     window._currentUser = null;
@@ -902,12 +921,10 @@ async function binPut(data) {
 // AUTH CALLBACKS (chiamate dal modulo Firebase)
 // ══════════════════════════════════════════════════
 window.onBaristaAuth = async function(user) {
-  // Mostra subito view-mode — non bloccare su errori DB
   const p = new URLSearchParams(window.location.search);
-  const tok = p.get('t');
   const cp  = p.get('c');
 
-  // Se arriva da QR, decodifica il db cliente ma vai comunque a view-mode
+  // Se arriva da QR, decodifica il db cliente
   if (cp) {
     try {
       const d = JSON.parse(atob(cp));
@@ -921,9 +938,16 @@ window.onBaristaAuth = async function(user) {
   // Carica nome bar in background (non blocca)
   dbGet('/info').then(info => {
     const nomebar = (info && info.nomebar) || user.email || 'Il tuo bar';
-    document.getElementById('mode-nomebar').textContent = nomebar;
+    const m = document.getElementById('mode-nomebar');
+    const b = document.getElementById('b-barname');
+    if (m) m.textContent = nomebar;
+    if (b) b.textContent = nomebar;
   }).catch(() => {
-    document.getElementById('mode-nomebar').textContent = user.email || 'Il tuo bar';
+    const fallback = user.email || 'Il tuo bar';
+    const m = document.getElementById('mode-nomebar');
+    const b = document.getElementById('b-barname');
+    if (m) m.textContent = fallback;
+    if (b) b.textContent = fallback;
   });
 
   // Se il nodo non esiste ancora, crealo in background
@@ -938,7 +962,8 @@ window.onBaristaAuth = async function(user) {
     }
   }).catch(e => console.warn('DB init:', e.message));
 
-  showView('view-mode');
+  // Entra direttamente nel pannello barista
+  enterBarista();
 };
 
 window.onBaristaLogout = function() {
@@ -979,7 +1004,7 @@ window.onBaristaLogout = function() {
     return;
   }
 
-  // Accesso diretto senza parametri — mostra auth barista o cliente
+  // Accesso diretto senza parametri — mostra home pubblica
   const savedDb = localStorage.getItem('cf_cl_db');
   if (savedDb) window._clienteDbUrl = savedDb;
 
@@ -996,9 +1021,8 @@ window.onBaristaLogout = function() {
     return;
   }
 
-  // Nessuna sessione — mostra auth barista
-  showView('view-auth');
-  showPanel('auth-login-panel');
+  // Nessuna sessione — mostra schermata di scelta Barista/Cliente
+  showView('view-mode');
 };
 
 // ══════════════════════════════════════════════════
@@ -1051,7 +1075,10 @@ async function doRegister() {
     // Aggiorniamo il nome dopo che onBaristaAuth ha creato il nodo
     setTimeout(async()=>{
       try { await dbPatch('/info', {nomebar}); } catch(e){}
-      document.getElementById('mode-nomebar').textContent = nomebar;
+      const m = document.getElementById('mode-nomebar');
+      const b = document.getElementById('b-barname');
+      if (m) m.textContent = nomebar;
+      if (b) b.textContent = nomebar;
     }, 1500);
   } catch(e) {
     const msgs = {
@@ -1436,6 +1463,79 @@ async function updBStats(){
       return '<li class="hist-item"><span class="hist-icon">'+ic+'</span><span class="hist-name">'+nm+'</span><span class="hist-time">'+tm+'</span></li>';
     }).join('');
   } catch(e){}
+}
+
+// ══════════════════════════════════════════════════
+// BARISTA — Aggiunta cliente manuale
+// ══════════════════════════════════════════════════
+function toggleAddClienteManuale() {
+  const box = document.getElementById('b-add-cliente');
+  if (!box) return;
+  box.style.display = (box.style.display === 'none' || !box.style.display) ? 'block' : 'none';
+}
+
+async function salvaClienteManuale() {
+  const nome = document.getElementById('b-add-nome').value.trim();
+  const cognome = document.getElementById('b-add-cognome').value.trim();
+  const email = document.getElementById('b-add-email').value.trim().toLowerCase();
+  const pin   = document.getElementById('b-add-pin').value.trim();
+  const errEl = document.getElementById('b-add-err');
+  errEl.style.display = 'none';
+
+  if (!nome || !email || pin.length !== 4) {
+    errEl.textContent = 'Compila nome, email e un PIN di 4 cifre.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    const bin = await binGet();
+    // Evita doppioni per email
+    const existing = Object.values(bin.clienti || {}).find(c => c.email === email);
+    if (existing) {
+      errEl.textContent = 'Esiste già un cliente con questa email.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const clienti = Object.values(bin.clienti || {});
+    const nums = clienti.map(c => c.numId || 0);
+    const numId = nums.length ? Math.max(...nums) + 1 : 1;
+    const id = 'c_' + Date.now().toString(36);
+
+    if (!bin.clienti) bin.clienti = {};
+    bin.clienti[id] = {
+      id,
+      numId,
+      nome,
+      cognome,
+      email,
+      pin,
+      avatar: '😊',
+      puntiC: 0,
+      puntiK: 0,
+      totC: 0,
+      totK: 0,
+      totOmaggi: 0,
+      storia: [],
+      notifiche: [],
+      registrato: Date.now(),
+      pinMustChange: true
+    };
+
+    await binPut(bin);
+    showToast('Cliente creato: ' + nome + ' ' + (cognome || ''));
+    // pulizia form e refresh lista
+    document.getElementById('b-add-nome').value = '';
+    document.getElementById('b-add-cognome').value = '';
+    document.getElementById('b-add-email').value = '';
+    document.getElementById('b-add-pin').value = '';
+    toggleAddClienteManuale();
+    updBStats();
+  } catch (e) {
+    errEl.textContent = 'Errore: ' + e.message;
+    errEl.style.display = 'block';
+  }
 }
 
 function bTab(t){
@@ -2113,68 +2213,4 @@ function saveFbConfig() {
   window.location.reload();
 }
 
-window.addEventListener('load',()=>{
-  // Carica dbUrl cliente da localStorage se presente
-  const savedDb=localStorage.getItem('cf_cl_db');
-  if(savedDb)window._clienteDbUrl=savedDb;
-
-  // PWA Manifest — installabile come app su Android e iOS
-  const icon = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%232C1810"/><text y=".9em" font-size="80" x="10">☕</text></svg>';
-  const manifest = {
-    name: 'Caffè Fedeltà',
-    short_name: 'CaffèFedeltà',
-    description: 'La tua carta fedeltà digitale',
-    start_url: window.location.pathname,
-    display: 'standalone',
-    background_color: '#FAF3EC',
-    theme_color: '#2C1810',
-    orientation: 'portrait',
-    icons: [{src:icon, sizes:'192x192', type:'image/svg+xml'},{src:icon, sizes:'512x512', type:'image/svg+xml'}]
-  };
-  const mBlob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
-  const mUrl = URL.createObjectURL(mBlob);
-  document.getElementById('pwa-manifest').href = mUrl;
-  document.getElementById('pwa-icon').href = icon;
-  // Se è cliente senza Firebase, inizializza il flusso cliente
-  if(window._isClienteOnly) {
-    const p2 = new URLSearchParams(window.location.search);
-    const tok2 = p2.get('t');
-    const cp2  = p2.get('c');
-    const idp2 = p2.get('id');
-    if(tok2 && window._clienteDbUrl) {
-      initLanding(tok2);
-    } else if(cp2 && idp2 && window._clienteDbUrl) {
-      showClSub('cl-loading');
-      clBinGet().then(bin=>{
-        const c=bin.clienti&&bin.clienti[idp2];
-        if(c){curCId=idp2;localStorage.setItem('cf_id',idp2);renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
-        else showClSub('cl-accedi');
-      }).catch(()=>showClSub('cl-accedi'));
-    } else {
-      const sid=localStorage.getItem('cf_id');
-      if(sid&&window._clienteDbUrl){
-        showClSub('cl-loading');
-        clBinGet().then(bin=>{
-          const c=bin.clienti&&bin.clienti[sid];
-          if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
-          else showClSub('cl-accedi');
-        }).catch(()=>showClSub('cl-accedi'));
-      } else {
-        showClSub('cl-accedi');
-      }
-    }
-    return;
-  }
-  // Se _needFbConfig è già stato impostato dal modulo, non fare nulla
-  if(window._needFbConfig) return;
-  // Se Firebase non risponde entro 6s mostra auth
-  setTimeout(()=>{
-    if(document.getElementById('view-splash').classList.contains('active')){
-      showView('view-auth');
-      showPanel('auth-login-panel');
-    }
-  },6000);
-});
-</script>
-</body>
-</html>
+window.add
