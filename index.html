@@ -279,16 +279,21 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
             <b>1.</b> Clicca il bottone qui sotto<br>
             <b>2.</b> Assicurati di essere sul progetto <code style="background:var(--latte);padding:2px 6px;border-radius:4px;">bar-tessera-fedelta</code><br>
             <b>3.</b> Vai in <b>API e servizi → Credenziali</b><br>
-            <b>4.</b> Apri la tua <b>Chiave API</b> che usi per l'app web<br>
-            <b>5.</b> Copia il valore (inizia con <code style="background:var(--latte);padding:2px 6px;border-radius:4px;">AIza...</code>)<br>
+            <b>4.</b> Apri la <b>Chiave API</b> configurata per la tua app web<br>
+            <b>5.</b> Copia il valore (inizia con <code style="background:var(--latte);padding:2px 6px;border-radius:4px;">AIzaSy...</code>)<br>
             <b>6.</b> Incollalo qui sotto 👇
           </div>
+          <div style="background:#fff8e1;border:1px solid var(--gold);border-radius:var(--rs);padding:10px 12px;margin-bottom:10px;font-size:12px;color:#7a5c00;line-height:1.7;">
+            ⚠️ <b>Usa la chiave che abilita il reset password:</b><br>
+            <code style="background:rgba(0,0,0,.06);padding:2px 5px;border-radius:3px;font-size:11px;">AIzaSyCqlAPxNmyEj-G0loz-JYRkJXmc6A9Jjls</code><br>
+            NON usare altre chiavi del progetto — rompono il reset password.
+          </div>
         </div>
-        <a href="https://console.cloud.google.com/apis/credentials?project=bar-tessera-fedelta" target="_blank" class="btn btn-ghost" style="text-decoration:none;display:flex;margin-bottom:14px;">
+        <a href="https://console.cloud.google.com/apis/credentials?project=bar-tessera-fedelta" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" style="text-decoration:none;display:flex;margin-bottom:14px;">
           🔑 Apri Google Cloud – Credenziali API
         </a>
         <label class="lbl">Incolla qui la tua API Key</label>
-        <input class="inp" id="fb-apikey" type="text" placeholder="AIza..." autocomplete="off" style="font-family:monospace;font-size:13px;letter-spacing:.5px;">
+        <input class="inp" id="fb-apikey" type="text" placeholder="AIzaSy..." autocomplete="off" style="font-family:monospace;font-size:13px;letter-spacing:.5px;">
         <button class="btn btn-dark" onclick="saveFbConfig()" id="fb-save-btn">🚀 Salva e avvia l'app</button>
         <p id="fb-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
       </div>
@@ -362,10 +367,10 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     <div style="font-size:56px;margin-bottom:14px;">☕</div>
     <h1 style="font-size:26px;font-weight:normal;color:var(--espresso);margin-bottom:6px;">Caffè Fedeltà</h1>
     <p id="mode-nomebar" style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:32px;"></p>
-    <button onclick="showView('view-auth'); showPanel('auth-login-panel')" style="width:100%;max-width:300px;padding:22px;border-radius:var(--r);border:none;font-family:'Georgia',serif;cursor:pointer;background:var(--espresso);color:white;box-shadow:0 4px 20px rgba(44,24,16,.25);text-align:center;margin-bottom:14px;">
+    <button onclick="showView('view-auth');showPanel('auth-login-panel')" style="width:100%;max-width:300px;padding:22px;border-radius:var(--r);border:none;font-family:'Georgia',serif;cursor:pointer;background:var(--espresso);color:white;box-shadow:0 4px 20px rgba(44,24,16,.25);text-align:center;margin-bottom:14px;">
       <span style="font-size:36px;display:block;margin-bottom:8px;">👨‍💼</span>
       <div style="font-size:17px;margin-bottom:3px;">Sono il Barista</div>
-      <div style="font-size:12px;opacity:.7;font-style:italic;">Accedi per generare QR e gestire i clienti</div>
+      <div style="font-size:12px;opacity:.7;font-style:italic;">Genera QR e gestisci i clienti</div>
     </button>
     <button onclick="accessoClienteEmail()" style="width:100%;max-width:300px;padding:22px;border-radius:var(--r);border:1px solid var(--latte);font-family:'Georgia',serif;cursor:pointer;background:white;color:var(--text);box-shadow:0 4px 16px rgba(44,24,16,.1);text-align:center;margin-bottom:10px;">
       <span style="font-size:36px;display:block;margin-bottom:8px;">👤</span>
@@ -375,7 +380,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     <button onclick="accessoClienteEmail()" style="width:100%;max-width:300px;padding:14px;border-radius:var(--r);border:2px solid var(--crema);font-family:'Georgia',serif;cursor:pointer;background:var(--foam);color:var(--crema);text-align:center;margin-bottom:14px;font-size:14px;">
       🔑 Già cliente? Accedi con email o tessera
     </button>
-    <button onclick="showView('view-auth'); showPanel('auth-login-panel')" style="background:none;border:none;color:var(--muted);font-size:11px;font-style:italic;cursor:pointer;margin-top:4px;text-decoration:underline;font-family:'Georgia',serif;">Accedi come barista →</button>
+    <button onclick="doLogout()" style="background:none;border:none;color:var(--muted);font-size:11px;font-style:italic;cursor:pointer;margin-top:4px;text-decoration:underline;font-family:'Georgia',serif;">Esci dall'account →</button>
   </div>
 </div>
 
@@ -393,15 +398,15 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 20h18M8 20V10M12 20V4M16 20v-6"/></svg>
       Stats
     </button>
-    <button class="nav-btn" onclick="doLogout()" style="color:rgba(255,255,255,.4);font-size:10px;">
+    <button class="nav-btn" onclick="showView('view-mode')" style="color:rgba(255,255,255,.4);font-size:10px;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 16l4-4m0 0l-4-4m4 4H7"/></svg>
       Esci
     </button>
   </nav>
-  <div style="background:var(--espresso);color:rgba(255,255,255,.7);font-size:12px;padding:4px 12px;font-style:italic;">
-    Bar attivo: <span id="b-barname">—</span>
-  </div>
 
+  <div style="background:rgba(0,0,0,0.25);color:rgba(255,255,255,.75);font-size:11px;padding:4px 14px;text-align:center;font-style:italic;letter-spacing:.3px;">
+    ☕ Bar attivo: <span id="b-barname" style="color:rgba(255,255,255,.95);font-weight:bold;">—</span>
+  </div>
   <div class="page active" id="bpage-qr">
     <div class="approv" id="approv-cons">
       <div style="font-size:16px;font-weight:normal;color:var(--success);margin-bottom:4px;">🔔 Cliente in attesa!</div>
@@ -450,25 +455,22 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
 
   <div class="page" id="bpage-clienti">
     <div class="hdr"><span class="cup">👥</span><h1>Clienti registrati</h1></div>
-
-    <button class="btn btn-dark" style="margin-bottom:10px;" onclick="toggleAddClienteManuale()">
-      ➕ Aggiungi cliente manualmente
-    </button>
-
-    <div class="card" id="b-add-cliente" style="display:none;">
-      <h2>Nuovo cliente</h2>
-      <label class="lbl">Nome</label>
-      <input class="inp" id="b-add-nome" type="text" placeholder="es. Mario">
+    <button class="btn btn-dark" style="width:100%;margin-bottom:10px;" onclick="(function(){var b=document.getElementById('b-add-cliente');b.style.display=(b.style.display==='none'||b.style.display==='')?'block':'none';})()">➕ Aggiungi cliente manualmente</button>
+    <div class="card" id="b-add-cliente" style="display:none;margin-bottom:12px;">
+      <h2 style="margin-bottom:12px;">Nuovo cliente</h2>
+      <label class="lbl">Nome *</label>
+      <input class="inp" id="b-add-nome" type="text" placeholder="es. Mario" autocomplete="given-name">
       <label class="lbl">Cognome</label>
-      <input class="inp" id="b-add-cognome" type="text" placeholder="es. Rossi">
-      <label class="lbl">Email</label>
-      <input class="inp" id="b-add-email" type="email" placeholder="mario@email.com">
-      <label class="lbl">PIN iniziale (4 cifre)</label>
-      <input class="inp" id="b-add-pin" type="password" maxlength="4" placeholder="es. 1234" inputmode="numeric">
+      <input class="inp" id="b-add-cognome" type="text" placeholder="es. Rossi" autocomplete="family-name">
+      <label class="lbl">Email *</label>
+      <input class="inp" id="b-add-email" type="email" placeholder="mario@email.com" autocomplete="email">
+      <label class="lbl">PIN iniziale (4 cifre) *</label>
+      <input class="inp" id="b-add-pin" type="password" maxlength="4" placeholder="es. 1234" inputmode="numeric" autocomplete="new-password">
+      <div style="font-size:11px;color:var(--muted);font-style:italic;margin-bottom:10px;">⚠️ Il cliente dovrà cambiare il PIN al primo accesso al suo profilo.</div>
       <button class="btn btn-success" onclick="salvaClienteManuale()">💾 Salva cliente</button>
+      <button class="btn btn-ghost" style="margin-top:6px;" onclick="document.getElementById('b-add-cliente').style.display='none'">✕ Annulla</button>
       <p id="b-add-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
     </div>
-
     <div class="search-wrap">
       <span class="search-ico">🔍</span>
       <input class="search-inp" id="b-search" type="text" placeholder="Cerca nome, cognome, email o tessera..." oninput="filterClienti(this.value)">
@@ -939,12 +941,17 @@ window.onBaristaAuth = async function(user) {
     } catch(e){}
   }
 
-  // Carica nome bar in background (non blocca)
+  // Carica nome bar e aggiorna badge pannello barista
   dbGet('/info').then(info => {
     const nomebar = (info && info.nomebar) || user.email || 'Il tuo bar';
     document.getElementById('mode-nomebar').textContent = nomebar;
+    const bb = document.getElementById('b-barname');
+    if (bb) bb.textContent = nomebar;
   }).catch(() => {
-    document.getElementById('mode-nomebar').textContent = user.email || 'Il tuo bar';
+    const fallback = user.email || 'Il tuo bar';
+    document.getElementById('mode-nomebar').textContent = fallback;
+    const bb = document.getElementById('b-barname');
+    if (bb) bb.textContent = fallback;
   });
 
   // Se il nodo non esiste ancora, crealo in background
@@ -959,7 +966,10 @@ window.onBaristaAuth = async function(user) {
     }
   }).catch(e => console.warn('DB init:', e.message));
 
-  showView('view-mode');
+  // Dopo il login → pannello barista diretto (view-mode è la home pubblica)
+  showView('view-barista');
+  bTab('qr');
+  initBarista();
 };
 
 window.onBaristaLogout = function() {
@@ -1017,8 +1027,8 @@ window.onBaristaLogout = function() {
     return;
   }
 
-  // Nessuna sessione — mostra auth barista
-  showView('view-auth');
+  // Nessuna sessione — mostra home pubblica (scelta Barista / Cliente)
+  showView('view-mode');
   showPanel('auth-login-panel');
 };
 
@@ -1073,6 +1083,8 @@ async function doRegister() {
     setTimeout(async()=>{
       try { await dbPatch('/info', {nomebar}); } catch(e){}
       document.getElementById('mode-nomebar').textContent = nomebar;
+      const bb2 = document.getElementById('b-barname');
+      if (bb2) bb2.textContent = nomebar;
     }, 1500);
   } catch(e) {
     const msgs = {
@@ -1457,6 +1469,51 @@ async function updBStats(){
       return '<li class="hist-item"><span class="hist-icon">'+ic+'</span><span class="hist-name">'+nm+'</span><span class="hist-time">'+tm+'</span></li>';
     }).join('');
   } catch(e){}
+}
+
+async function salvaClienteManuale() {
+  const nome = document.getElementById('b-add-nome').value.trim();
+  const cognome = document.getElementById('b-add-cognome').value.trim();
+  const email = document.getElementById('b-add-email').value.trim().toLowerCase();
+  const pin = document.getElementById('b-add-pin').value.trim();
+  const errEl = document.getElementById('b-add-err');
+  errEl.style.display = 'none';
+  if (!nome || !email || !email.includes('@') || pin.length !== 4 || isNaN(pin)) {
+    errEl.textContent = 'Compila nome, email valida e un PIN di 4 cifre numeriche.';
+    errEl.style.display = 'block'; return;
+  }
+  const saveBtn = document.querySelector('#b-add-cliente .btn-success');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳...'; }
+  try {
+    const bin = await binGet();
+    const existing = Object.values(bin.clienti || {}).find(function(c){ return c.email === email; });
+    if (existing) {
+      errEl.textContent = 'Esiste già un cliente con questa email (tessera ' + String(existing.numId||'').padStart(4,'0') + ').';
+      errEl.style.display = 'block';
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Salva cliente'; }
+      return;
+    }
+    const nums = Object.values(bin.clienti || {}).map(function(c){ return c.numId || 0; });
+    const numId = nums.length ? Math.max.apply(null, nums) + 1 : 1;
+    const id = 'c' + Date.now().toString(36);
+    bin.clienti = bin.clienti || {};
+    bin.clienti[id] = {
+      id: id, numId: numId, nome: nome, cognome: cognome, email: email, pin: pin,
+      avatar: '😊', puntiC: 0, puntiK: 0, totC: 0, totK: 0, totOmaggi: 0,
+      storia: [], notifiche: [], registrato: Date.now(), pinMustChange: true
+    };
+    await binPut(bin);
+    showToast('✅ Cliente creato: ' + nome + (cognome ? ' ' + cognome : '') + ' — Tessera ' + String(numId).padStart(4,'0'));
+    ['b-add-nome','b-add-cognome','b-add-email','b-add-pin'].forEach(function(fid){
+      document.getElementById(fid).value = '';
+    });
+    document.getElementById('b-add-cliente').style.display = 'none';
+    updBStats();
+  } catch(e) {
+    errEl.textContent = 'Errore: ' + e.message;
+    errEl.style.display = 'block';
+  }
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Salva cliente'; }
 }
 
 function bTab(t){
@@ -2196,175 +2253,6 @@ window.addEventListener('load',()=>{
     }
   },6000);
 });
-
-// === Funzioni aggiunta manuale cliente ===
-function toggleAddClienteManuale() {
-  const box = document.getElementById('b-add-cliente');
-  if (!box) return;
-  box.style.display = (box.style.display === 'none' || !box.style.display) ? 'block' : 'none';
-}
-
-async function salvaClienteManuale() {
-  const nome = document.getElementById('b-add-nome').value.trim();
-  const cognome = document.getElementById('b-add-cognome').value.trim();
-  const email = document.getElementById('b-add-email').value.trim().toLowerCase();
-  const pin   = document.getElementById('b-add-pin').value.trim();
-  const errEl = document.getElementById('b-add-err');
-  errEl.style.display = 'none';
-
-  if (!nome || !email || pin.length !== 4) {
-    errEl.textContent = 'Compila nome, email e un PIN di 4 cifre.';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  try {
-    const bin = await binGet();
-    const existing = Object.values(bin.clienti || {}).find(c => c.email === email);
-    if (existing) {
-      errEl.textContent = 'Esiste già un cliente con questa email.';
-      errEl.style.display = 'block';
-      return;
-    }
-
-    const clienti = Object.values(bin.clienti || {});
-    const nums = clienti.map(c => c.numId || 0);
-    const numId = nums.length ? Math.max(...nums) + 1 : 1;
-    const id = 'c' + Date.now().toString(36);
-
-    if (!bin.clienti) bin.clienti = {};
-    bin.clienti[id] = {
-      id,
-      numId,
-      nome,
-      cognome,
-      email,
-      pin,
-      avatar: '😊',
-      puntiC: 0,
-      puntiK: 0,
-      totC: 0,
-      totK: 0,
-      totOmaggi: 0,
-      storia: [],
-      notifiche: [],
-      registrato: Date.now(),
-      pinMustChange: true
-    };
-
-    await binPut(bin);
-    showToast('Cliente creato: ' + nome + (cognome ? ' ' + cognome : ''));
-    document.getElementById('b-add-nome').value = '';
-    document.getElementById('b-add-cognome').value = '';
-    document.getElementById('b-add-email').value = '';
-    document.getElementById('b-add-pin').value = '';
-    toggleAddClienteManuale();
-    updBStats();
-  } catch (e) {
-    errEl.textContent = 'Errore: ' + e.message;
-    errEl.style.display = 'block';
-  }
-}
-
-// === Override onBaristaAuth / onBaristaLogout per nuova UX ===
-window.onBaristaAuth = async function(user) {
-  const p = new URLSearchParams(window.location.search);
-  const cp  = p.get('c');
-
-  if (cp) {
-    try {
-      const d = JSON.parse(atob(cp));
-      if (d.u && d.u.startsWith('https://')) {
-        window._clienteDbUrl = d.u;
-        localStorage.setItem('cf_cl_db', d.u);
-      }
-    } catch(e){}
-  }
-
-  dbGet('/info').then(info => {
-    const nomebar = (info && info.nomebar) || user.email || 'Il tuo bar';
-    const mn = document.getElementById('mode-nomebar');
-    if (mn) mn.textContent = nomebar;
-    const bb = document.getElementById('b-barname');
-    if (bb) bb.textContent = nomebar;
-  }).catch(() => {
-    const fallback = user.email || 'Il tuo bar';
-    const mn = document.getElementById('mode-nomebar');
-    if (mn) mn.textContent = fallback;
-    const bb = document.getElementById('b-barname');
-    if (bb) bb.textContent = fallback;
-  });
-
-  dbGet('').then(async data => {
-    if (!data || !data.stats) {
-      await dbSet('', {
-        info: { email: user.email, nomebar: '', creato: Date.now() },
-        token:'', tokenTs:0, request:null, lastApproval:null,
-        riscattoReq:null, riscattoApproval:null,
-        clienti:{}, stats:{caffe:0,cap:0,omaggi:0,storia:[]}
-      });
-    }
-  }).catch(e => console.warn('DB init:', e.message));
-
-  showView('view-barista');
-  bTab('qr');
-  initBarista();
-};
-
-window.onBaristaLogout = function() {
-  const p = new URLSearchParams(window.location.search);
-  const tok = p.get('t');
-  const cp  = p.get('c');
-  const idp = p.get('id');
-
-  if (window._isClienteOnly) return;
-
-  if (tok && cp) {
-    try {
-      const d = JSON.parse(atob(cp));
-      if (d.u && d.u.startsWith('https://')) {
-        window._clienteDbUrl = d.u;
-        localStorage.setItem('cf_cl_db', d.u);
-      }
-    } catch(e){}
-    showView('view-cl');
-    if (window._clienteDbUrl) {
-      initLanding(tok);
-    } else {
-      showClSub('cl-accedi');
-    }
-    return;
-  }
-
-  if (cp && idp && window._clienteDbUrl) {
-    showView('view-cl');
-    showClSub('cl-loading');
-    clBinGet().then(bin=>{
-      const c=bin.clienti&&bin.clienti[idp];
-      if(c){curCId=idp;localStorage.setItem('cf_id',idp);renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
-      else showClSub('cl-accedi');
-    }).catch(()=>showClSub('cl-accedi'));
-    return;
-  }
-
-  const savedDb = localStorage.getItem('cf_cl_db');
-  if (savedDb) window._clienteDbUrl = savedDb;
-
-  const sid = localStorage.getItem('cf_id');
-  if (sid && window._clienteDbUrl) {
-    showView('view-cl');
-    showClSub('cl-loading');
-    clBinGet().then(bin=>{
-      const c=bin.clienti&&bin.clienti[sid];
-      if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
-      else showClSub('cl-accedi');
-    }).catch(()=>showClSub('cl-accedi'));
-    return;
-  }
-
-  showView('view-mode');
-};
-
 </script>
 </body>
 </html>
