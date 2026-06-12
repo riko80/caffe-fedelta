@@ -294,6 +294,13 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       </div>
       <p style="font-size:12px;color:var(--muted);font-style:italic;text-align:center;margin-top:8px;">La chiave viene salvata solo sul tuo dispositivo, mai online.</p>
     </div>
+        <label class="lbl">Incolla qui la tua API Key</label>
+        <input class="inp" id="fb-apikey" type="text" placeholder="AIzaSy..." autocomplete="off" style="font-family:monospace;font-size:13px;letter-spacing:.5px;">
+        <button class="btn btn-dark" onclick="saveFbConfig()" id="fb-save-btn">🚀 Salva e avvia l'app</button>
+        <p id="fb-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+      </div>
+      <p style="font-size:12px;color:var(--muted);font-style:italic;text-align:center;margin-top:8px;">La chiave viene salvata solo sul tuo dispositivo, mai online.</p>
+    </div>
 
   </div>
 </div>
@@ -834,6 +841,7 @@ onAuthStateChanged(auth, (user) => {
     window._currentUser = user;
     window._barId = user.uid;
     window._dbUrl = firebaseConfig.databaseURL + '/bars/' + user.uid;
+    // Carica nome bar e mostra view-mode
     window.onBaristaAuth(user);
   } else {
     window._currentUser = null;
@@ -922,10 +930,12 @@ async function binPut(data) {
 // AUTH CALLBACKS (chiamate dal modulo Firebase)
 // ══════════════════════════════════════════════════
 window.onBaristaAuth = async function(user) {
+  // Mostra subito view-mode — non bloccare su errori DB
   const p = new URLSearchParams(window.location.search);
+  const tok = p.get('t');
   const cp  = p.get('c');
 
-  // Se arriva da QR, decodifica il db cliente ma non cambia il flusso barista
+  // Se arriva da QR, decodifica il db cliente ma vai comunque a view-mode
   if (cp) {
     try {
       const d = JSON.parse(atob(cp));
@@ -939,16 +949,9 @@ window.onBaristaAuth = async function(user) {
   // Carica nome bar in background (non blocca)
   dbGet('/info').then(info => {
     const nomebar = (info && info.nomebar) || user.email || 'Il tuo bar';
-    const mn = document.getElementById('mode-nomebar');
-    if (mn) mn.textContent = nomebar;
-    const bb = document.getElementById('b-barname');
-    if (bb) bb.textContent = nomebar;
+    document.getElementById('mode-nomebar').textContent = nomebar;
   }).catch(() => {
-    const fallback = user.email || 'Il tuo bar';
-    const mn = document.getElementById('mode-nomebar');
-    if (mn) mn.textContent = fallback;
-    const bb = document.getElementById('b-barname');
-    if (bb) bb.textContent = fallback;
+    document.getElementById('mode-nomebar').textContent = user.email || 'Il tuo bar';
   });
 
   // Se il nodo non esiste ancora, crealo in background
@@ -963,10 +966,7 @@ window.onBaristaAuth = async function(user) {
     }
   }).catch(e => console.warn('DB init:', e.message));
 
-  // Dopo login vai direttamente al pannello barista
-  showView('view-barista');
-  bTab('qr');
-  initBarista();
+  showView('view-mode');
 };
 
 window.onBaristaLogout = function() {
@@ -1007,7 +1007,7 @@ window.onBaristaLogout = function() {
     return;
   }
 
-  // Accesso diretto senza parametri — cliente salvato o home pubblica
+  // Accesso diretto senza parametri — mostra auth barista o cliente
   const savedDb = localStorage.getItem('cf_cl_db');
   if (savedDb) window._clienteDbUrl = savedDb;
 
@@ -1024,8 +1024,9 @@ window.onBaristaLogout = function() {
     return;
   }
 
-  // Nessuna sessione — mostra scelta Barista / Cliente
-  showView('view-mode');
+  // Nessuna sessione — mostra auth barista
+  showView('view-auth');
+  showPanel('auth-login-panel');
 };
 
 // ══════════════════════════════════════════════════
@@ -1078,10 +1079,7 @@ async function doRegister() {
     // Aggiorniamo il nome dopo che onBaristaAuth ha creato il nodo
     setTimeout(async()=>{
       try { await dbPatch('/info', {nomebar}); } catch(e){}
-      const mn = document.getElementById('mode-nomebar');
-      if (mn) mn.textContent = nomebar;
-      const bb = document.getElementById('b-barname');
-      if (bb) bb.textContent = nomebar;
+      document.getElementById('mode-nomebar').textContent = nomebar;
     }, 1500);
   } catch(e) {
     const msgs = {
@@ -1130,7 +1128,7 @@ function showView(id) {
 }
 
 // ══════════════════════════════════════════════════
-// BARISTA — Accesso (non usato dalla home, ma utile per richiamo diretto)
+// BARISTA — Accesso
 // ══════════════════════════════════════════════════
 function enterBarista() {
   showView('view-barista');
@@ -1216,7 +1214,9 @@ function startBPoll() {
   bPollTimer=setInterval(async()=>{
     try {
       const bin=await binGet(); setConn(true);
-      // Richiesta consumazione (ultimi 3 minuti)
+      // Richiesta consumazione
+      // Mostra pannello per qualsiasi richiesta recente (ultimi 3 minuti)
+      // Non solo quella col token corrente — il cliente potrebbe impiegare tempo a registrarsi
       if(bin.request && bin.request.clienteId && (Date.now()-(bin.request.ts||0))<180000) {
         const c=bin.clienti&&bin.request.clienteId?bin.clienti[bin.request.clienteId]:null;
         const idStr=c&&c.numId?String(c.numId).padStart(4,'0'):'';
@@ -1272,79 +1272,6 @@ function checkOmaggiAlert(bin) {
     document.getElementById('b-omaggi-nomi').innerHTML=html;
   } else {
     alertEl.style.display='none';
-  }
-}
-
-// ══════════════════════════════════════════════════
-// BARISTA — Aggiunta manuale cliente
-// ══════════════════════════════════════════════════
-function toggleAddClienteManuale() {
-  const box = document.getElementById('b-add-cliente');
-  if (!box) return;
-  box.style.display = (box.style.display === 'none' || !box.style.display) ? 'block' : 'none';
-}
-
-async function salvaClienteManuale() {
-  const nome = document.getElementById('b-add-nome').value.trim();
-  const cognome = document.getElementById('b-add-cognome').value.trim();
-  const email = document.getElementById('b-add-email').value.trim().toLowerCase();
-  const pin   = document.getElementById('b-add-pin').value.trim();
-  const errEl = document.getElementById('b-add-err');
-  errEl.style.display = 'none';
-
-  if (!nome || !email || pin.length !== 4) {
-    errEl.textContent = 'Compila nome, email e un PIN di 4 cifre.';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  try {
-    const bin = await binGet();
-    // Evita doppioni per email
-    const existing = Object.values(bin.clienti || {}).find(c => c.email === email);
-    if (existing) {
-      errEl.textContent = 'Esiste già un cliente con questa email.';
-      errEl.style.display = 'block';
-      return;
-    }
-
-    const clienti = Object.values(bin.clienti || {});
-    const nums = clienti.map(c => c.numId || 0);
-    const numId = nums.length ? Math.max(...nums) + 1 : 1;
-    const id = 'c' + Date.now().toString(36);
-
-    if (!bin.clienti) bin.clienti = {};
-    bin.clienti[id] = {
-      id,
-      numId,
-      nome,
-      cognome,
-      email,
-      pin,
-      avatar: '😊',
-      puntiC: 0,
-      puntiK: 0,
-      totC: 0,
-      totK: 0,
-      totOmaggi: 0,
-      storia: [],
-      notifiche: [],
-      registrato: Date.now(),
-      pinMustChange: true
-    };
-
-    await binPut(bin);
-    showToast('Cliente creato: ' + nome + (cognome ? ' ' + cognome : ''));
-    // pulizia form e refresh lista
-    document.getElementById('b-add-nome').value = '';
-    document.getElementById('b-add-cognome').value = '';
-    document.getElementById('b-add-email').value = '';
-    document.getElementById('b-add-pin').value = '';
-    toggleAddClienteManuale();
-    updBStats();
-  } catch (e) {
-    errEl.textContent = 'Errore: ' + e.message;
-    errEl.style.display = 'block';
   }
 }
 
@@ -2226,3 +2153,225 @@ window.addEventListener('load',()=>{
     short_name: 'CaffèFedeltà',
     description: 'La tua carta fedeltà digitale',
     start_url: window.location.pathname,
+    display: 'standalone',
+    background_color: '#FAF3EC',
+    theme_color: '#2C1810',
+    orientation: 'portrait',
+    icons: [{src:icon, sizes:'192x192', type:'image/svg+xml'},{src:icon, sizes:'512x512', type:'image/svg+xml'}]
+  };
+  const mBlob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+  const mUrl = URL.createObjectURL(mBlob);
+  document.getElementById('pwa-manifest').href = mUrl;
+  document.getElementById('pwa-icon').href = icon;
+  // Se è cliente senza Firebase, inizializza il flusso cliente
+  if(window._isClienteOnly) {
+    const p2 = new URLSearchParams(window.location.search);
+    const tok2 = p2.get('t');
+    const cp2  = p2.get('c');
+    const idp2 = p2.get('id');
+    if(tok2 && window._clienteDbUrl) {
+      initLanding(tok2);
+    } else if(cp2 && idp2 && window._clienteDbUrl) {
+      showClSub('cl-loading');
+      clBinGet().then(bin=>{
+        const c=bin.clienti&&bin.clienti[idp2];
+        if(c){curCId=idp2;localStorage.setItem('cf_id',idp2);renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+        else showClSub('cl-accedi');
+      }).catch(()=>showClSub('cl-accedi'));
+    } else {
+      const sid=localStorage.getItem('cf_id');
+      if(sid&&window._clienteDbUrl){
+        showClSub('cl-loading');
+        clBinGet().then(bin=>{
+          const c=bin.clienti&&bin.clienti[sid];
+          if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+          else showClSub('cl-accedi');
+        }).catch(()=>showClSub('cl-accedi'));
+      } else {
+        showClSub('cl-accedi');
+      }
+    }
+    return;
+  }
+  // Se _needFbConfig è già stato impostato dal modulo, non fare nulla
+  if(window._needFbConfig) return;
+  // Se Firebase non risponde entro 6s mostra auth
+  setTimeout(()=>{
+    if(document.getElementById('view-splash').classList.contains('active')){
+      showView('view-auth');
+      showPanel('auth-login-panel');
+    }
+  },6000);
+});
+
+// === Funzioni aggiunta manuale cliente (override pulito) ===
+function toggleAddClienteManuale() {
+  const box = document.getElementById('b-add-cliente');
+  if (!box) return;
+  box.style.display = (box.style.display === 'none' || !box.style.display) ? 'block' : 'none';
+}
+
+async function salvaClienteManuale() {
+  const nome = document.getElementById('b-add-nome').value.trim();
+  const cognome = document.getElementById('b-add-cognome').value.trim();
+  const email = document.getElementById('b-add-email').value.trim().toLowerCase();
+  const pin   = document.getElementById('b-add-pin').value.trim();
+  const errEl = document.getElementById('b-add-err');
+  errEl.style.display = 'none';
+
+  if (!nome || !email || pin.length !== 4) {
+    errEl.textContent = 'Compila nome, email e un PIN di 4 cifre.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    const bin = await binGet();
+    const existing = Object.values(bin.clienti || {}).find(c => c.email === email);
+    if (existing) {
+      errEl.textContent = 'Esiste già un cliente con questa email.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const clienti = Object.values(bin.clienti || {});
+    const nums = clienti.map(c => c.numId || 0);
+    const numId = nums.length ? Math.max(...nums) + 1 : 1;
+    const id = 'c' + Date.now().toString(36);
+
+    if (!bin.clienti) bin.clienti = {};
+    bin.clienti[id] = {
+      id,
+      numId,
+      nome,
+      cognome,
+      email,
+      pin,
+      avatar: '😊',
+      puntiC: 0,
+      puntiK: 0,
+      totC: 0,
+      totK: 0,
+      totOmaggi: 0,
+      storia: [],
+      notifiche: [],
+      registrato: Date.now(),
+      pinMustChange: true
+    };
+
+    await binPut(bin);
+    showToast('Cliente creato: ' + nome + (cognome ? ' ' + cognome : ''));
+    document.getElementById('b-add-nome').value = '';
+    document.getElementById('b-add-cognome').value = '';
+    document.getElementById('b-add-email').value = '';
+    document.getElementById('b-add-pin').value = '';
+    toggleAddClienteManuale();
+    updBStats();
+  } catch (e) {
+    errEl.textContent = 'Errore: ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+// === Override onBaristaAuth / onBaristaLogout per nuova UX ===
+window.onBaristaAuth = async function(user) {
+  const p = new URLSearchParams(window.location.search);
+  const cp  = p.get('c');
+
+  if (cp) {
+    try {
+      const d = JSON.parse(atob(cp));
+      if (d.u && d.u.startsWith('https://')) {
+        window._clienteDbUrl = d.u;
+        localStorage.setItem('cf_cl_db', d.u);
+      }
+    } catch(e){}
+  }
+
+  dbGet('/info').then(info => {
+    const nomebar = (info && info.nomebar) || user.email || 'Il tuo bar';
+    const mn = document.getElementById('mode-nomebar');
+    if (mn) mn.textContent = nomebar;
+    const bb = document.getElementById('b-barname');
+    if (bb) bb.textContent = nomebar;
+  }).catch(() => {
+    const fallback = user.email || 'Il tuo bar';
+    const mn = document.getElementById('mode-nomebar');
+    if (mn) mn.textContent = fallback;
+    const bb = document.getElementById('b-barname');
+    if (bb) bb.textContent = fallback;
+  });
+
+  dbGet('').then(async data => {
+    if (!data || !data.stats) {
+      await dbSet('', {
+        info: { email: user.email, nomebar: '', creato: Date.now() },
+        token:'', tokenTs:0, request:null, lastApproval:null,
+        riscattoReq:null, riscattoApproval:null,
+        clienti:{}, stats:{caffe:0,cap:0,omaggi:0,storia:[]}
+      });
+    }
+  }).catch(e => console.warn('DB init:', e.message));
+
+  showView('view-barista');
+  bTab('qr');
+  initBarista();
+};
+
+window.onBaristaLogout = function() {
+  const p = new URLSearchParams(window.location.search);
+  const tok = p.get('t');
+  const cp  = p.get('c');
+  const idp = p.get('id');
+
+  if (window._isClienteOnly) return;
+
+  if (tok && cp) {
+    try {
+      const d = JSON.parse(atob(cp));
+      if (d.u && d.u.startsWith('https://')) {
+        window._clienteDbUrl = d.u;
+        localStorage.setItem('cf_cl_db', d.u);
+      }
+    } catch(e){}
+    showView('view-cl');
+    if (window._clienteDbUrl) {
+      initLanding(tok);
+    } else {
+      showClSub('cl-accedi');
+    }
+    return;
+  }
+
+  if (cp && idp && window._clienteDbUrl) {
+    showView('view-cl');
+    showClSub('cl-loading');
+    clBinGet().then(bin=>{
+      const c=bin.clienti&&bin.clienti[idp];
+      if(c){curCId=idp;localStorage.setItem('cf_id',idp);renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+      else showClSub('cl-accedi');
+    }).catch(()=>showClSub('cl-accedi'));
+    return;
+  }
+
+  const savedDb = localStorage.getItem('cf_cl_db');
+  if (savedDb) window._clienteDbUrl = savedDb;
+
+  const sid = localStorage.getItem('cf_id');
+  if (sid && window._clienteDbUrl) {
+    showView('view-cl');
+    showClSub('cl-loading');
+    clBinGet().then(bin=>{
+      const c=bin.clienti&&bin.clienti[sid];
+      if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+      else showClSub('cl-accedi');
+    }).catch(()=>showClSub('cl-accedi'));
+    return;
+  }
+
+  showView('view-mode');
+};
+
+</script>
+</body>
+</html>
