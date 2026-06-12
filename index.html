@@ -517,6 +517,12 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <h1 style="font-size:22px;font-weight:normal;color:var(--espresso);margin-bottom:5px;">La mia carta fedeltà</h1>
       <p style="font-size:13px;color:var(--muted);font-style:italic;">Accedi con la tua email e PIN</p>
     </div>
+    <div id="cl-bar-status" style="display:none;background:var(--sbg);border:1px solid #a5d6a7;border-radius:var(--rs);padding:9px 13px;font-size:12px;color:var(--success);font-style:italic;margin-bottom:12px;text-align:center;">
+      ✅ Bar collegato
+    </div>
+    <div id="cl-nobar-status" style="display:none;background:var(--dbg);border:1px solid #f5c6c6;border-radius:var(--rs);padding:9px 13px;font-size:12px;color:var(--danger);font-style:italic;margin-bottom:12px;text-align:center;">
+      ⚠️ Bar non collegato — scansiona prima il QR del barista
+    </div>
     <div class="card">
       <label class="lbl">Email</label>
       <input class="inp" id="acc-email" type="email" placeholder="mario@email.com" autocomplete="email">
@@ -527,9 +533,9 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     <div class="card">
       <label class="lbl">Numero tessera</label>
       <input class="inp" id="acc-id" type="number" placeholder="es. 42" inputmode="numeric">
-      <button class="btn btn-ghost" onclick="accediConId()">🔢 Accedi con numero tessera</button>
+      <button class="btn btn-ghost" id="acc-id-btn" onclick="accediConId()">🔢 Accedi con numero tessera</button>
     </div>
-    <p style="text-align:center;font-size:12px;color:var(--muted);font-style:italic;">Non sei ancora registrato? Scansiona il QR al bar!</p>
+    <p style="text-align:center;font-size:12px;color:var(--muted);font-style:italic;margin-top:8px;">Non sei ancora registrato? Scansiona il QR al bar!</p>
   </div>
 
   <!-- PIN cliente (dopo email trovata) -->
@@ -1121,10 +1127,9 @@ async function forceQR() {
 }
 
 function renderQR(token) {
-  // Il QR contiene l'URL con il token E il database URL codificato
-  const dbUrl = window._dbUrl ? window._dbUrl.replace('/bars/'+window._barId,'') + '/bars/' + window._barId : '';
-  // Usiamo direttamente il databaseURL del bar nel payload
-  const barDbUrl = 'https://bar-tessera-fedelta-default-rtdb.firebaseio.com/bars/' + window._barId;
+  // window._dbUrl = "https://...firebaseio.com/bars/UID" — path completo del bar
+  if (!window._dbUrl) { console.error('_dbUrl non impostato'); return; }
+  const barDbUrl = window._dbUrl; // già corretto
   const payload = btoa(JSON.stringify({u: barDbUrl}));
   const url = window.location.href.split('?')[0] + '?t=' + token + '&c=' + payload;
   document.getElementById('qtok').textContent = token;
@@ -1472,9 +1477,16 @@ async function resetPinCliente(cid){
 // CLIENTE — Database helpers (usa _clienteDbUrl)
 // ══════════════════════════════════════════════════
 async function clBinGet(){
-  const url=(window._clienteDbUrl||'').replace(/\/+$/,'')+'.json';
+  if(!window._clienteDbUrl){
+    throw new Error('Database non configurato. Scansiona il QR del barista.');
+  }
+  const url=window._clienteDbUrl.replace(/\/+$/,'')+'.json';
+  console.log('clBinGet URL:', url); // debug
   const r=await fetch(url);
-  if(!r.ok)throw new Error('DB '+r.status);
+  if(!r.ok){
+    const txt=await r.text();
+    throw new Error('DB '+r.status+': '+txt.slice(0,100));
+  }
   const d=await r.json();
   if(!d)return{token:'',tokenTs:0,request:null,lastApproval:null,clienti:{},stats:{caffe:0,cap:0,omaggi:0,storia:[]}};
   if(!d.stats)d.stats={caffe:0,cap:0,omaggi:0,storia:[]};
@@ -1606,6 +1618,17 @@ function showClSub(id){
     const el=document.getElementById(s);if(el)el.style.display='none';
   });
   const el=document.getElementById(id);if(el)el.style.display='block';
+  // Aggiorna stato bar quando mostra schermata accesso
+  if(id==='cl-accedi'){
+    const hasDb=!!(window._clienteDbUrl||localStorage.getItem('cf_cl_db'));
+    if(hasDb&&!window._clienteDbUrl){
+      window._clienteDbUrl=localStorage.getItem('cf_cl_db');
+    }
+    const barOk=document.getElementById('cl-bar-status');
+    const barNo=document.getElementById('cl-nobar-status');
+    if(barOk)barOk.style.display=hasDb?'block':'none';
+    if(barNo)barNo.style.display=hasDb?'none':'block';
+  }
 }
 
 async function initLanding(token){
