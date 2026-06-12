@@ -1,0 +1,2451 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Caffè Fedeltà</title>
+<meta name="theme-color" content="#2C1810">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Caffè Fedeltà">
+<link id="pwa-manifest" rel="manifest" href="">
+<link id="pwa-icon" rel="apple-touch-icon" href="">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --espresso:#2C1810;--crema:#C8956C;--latte:#F5E6D3;
+  --foam:#FAF3EC;--gold:#D4A853;--dark-gold:#A07830;
+  --text:#1A0F0A;--muted:#6B4E3D;
+  --success:#2D7A3A;--sbg:#E8F5E9;
+  --danger:#c0392b;--dbg:#fdecea;
+  --r:16px;--rs:10px;
+}
+body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-height:100vh;}
+.view{display:none;min-height:100vh;}.view.active{display:block;}
+.centered{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px 24px;text-align:center;}
+.card{background:white;border-radius:var(--r);padding:18px;box-shadow:0 2px 14px rgba(44,24,16,.09);margin-bottom:14px;}
+.card h2{font-size:15px;color:var(--espresso);margin-bottom:12px;font-weight:normal;}
+.nav{background:var(--espresso);display:flex;border-bottom:3px solid var(--gold);position:sticky;top:0;z-index:10;}
+.nav-btn{flex:1;padding:12px 4px;background:none;border:none;color:rgba(255,255,255,.5);font-family:'Georgia',serif;font-size:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .2s;}
+.nav-btn svg{width:19px;height:19px;}
+.nav-btn.active{color:var(--gold);border-bottom:2px solid var(--gold);}
+.back-btn{background:none;border:none;color:rgba(255,255,255,.7);font-family:'Georgia',serif;font-size:13px;padding:12px 16px;cursor:pointer;}
+.page{display:none;padding:14px;max-width:480px;margin:0 auto;}.page.active{display:block;}
+.lbl{font-size:13px;color:var(--muted);font-style:italic;margin-bottom:4px;display:block;}
+.inp{width:100%;padding:11px 14px;border:1px solid var(--latte);border-radius:var(--rs);font-size:15px;font-family:'Georgia',serif;background:white;color:var(--text);outline:none;margin-bottom:12px;}
+.inp:focus{border-color:var(--crema);}
+.btn{width:100%;padding:12px;border-radius:var(--rs);border:none;font-family:'Georgia',serif;font-size:14px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:9px;}
+.btn:active{transform:scale(.97);}
+.btn-dark{background:var(--espresso);color:white;}.btn-dark:hover{background:#3d2418;}
+.btn-gold{background:var(--gold);color:white;}.btn-gold:hover{background:var(--dark-gold);}
+.btn-success{background:var(--success);color:white;}
+.btn-danger{background:var(--danger);color:white;}
+.btn-ghost{background:var(--foam);color:var(--muted);border:1px solid var(--latte);font-size:13px;padding:9px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.hdr{text-align:center;padding:14px 0;}.hdr .cup{font-size:42px;display:block;margin-bottom:5px;}
+.hdr h1{font-size:21px;font-weight:normal;color:var(--espresso);}
+.hdr p{font-size:13px;color:var(--muted);font-style:italic;margin-top:2px;}
+.stamp-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+.stamp{aspect-ratio:1;border-radius:50%;border:2px dashed var(--crema);display:flex;align-items:center;justify-content:center;font-size:18px;background:var(--foam);position:relative;transition:all .3s;}
+.stamp.filled{border:2px solid var(--crema);background:var(--latte);}
+.stamp.cap.filled{background:#f0e0d0;border-color:#b8845a;}
+.stamp.free{border:2px solid var(--gold);background:#fff8e8;animation:pgold 2s infinite;}
+@keyframes pgold{0%,100%{box-shadow:0 0 0 0 rgba(212,168,83,.4)}50%{box-shadow:0 0 0 6px rgba(212,168,83,0)}}
+.stamp-num{position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--muted);white-space:nowrap;}
+.stamp-row{padding-bottom:20px;}
+.prog-bar{height:6px;background:var(--latte);border-radius:99px;overflow:hidden;margin-top:12px;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--crema),var(--gold));border-radius:99px;transition:width .5s;}
+.prog-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-style:italic;margin-top:5px;}
+.totals{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.tot-item{background:var(--foam);border-radius:var(--rs);padding:11px;text-align:center;}
+.tot-num{font-size:24px;color:var(--espresso);line-height:1;margin-bottom:3px;}
+.tot-label{font-size:11px;color:var(--muted);font-style:italic;}
+.tot-item.gold{background:#fff8e8;border:1px solid rgba(212,168,83,.3);}
+.tot-item.gold .tot-num{color:var(--dark-gold);}
+.alert{border-radius:var(--rs);padding:13px;display:flex;align-items:flex-start;gap:10px;margin-bottom:13px;}
+.alert .ai{font-size:24px;flex-shrink:0;}
+.alert p{font-size:13px;line-height:1.5;}
+.alert strong{font-size:14px;display:block;margin-bottom:2px;}
+.alert-success{background:var(--sbg);border:1px solid #a5d6a7;}.alert-success p{color:var(--success);}
+.alert-gold{background:#fffdf0;border:2px solid var(--gold);}.alert-gold p{color:var(--dark-gold);}
+.alert-danger{background:var(--dbg);border:1px solid #f5c6c6;}.alert-danger p{color:var(--danger);}
+.qr-box{text-align:center;padding:10px 0;}
+#qrcode-barista{display:inline-block;padding:12px;background:white;border-radius:var(--r);border:2px solid var(--latte);}
+.qr-timer-bar{height:5px;background:var(--latte);border-radius:99px;overflow:hidden;margin-top:12px;}
+.qr-timer-fill{height:100%;background:var(--gold);border-radius:99px;transition:width 1s linear;}
+.qr-timer-label{font-size:12px;color:var(--muted);font-style:italic;text-align:center;margin-top:4px;}
+.qr-token{font-family:monospace;font-size:10px;color:var(--crema);background:var(--espresso);padding:5px 10px;border-radius:8px;display:block;text-align:center;margin-top:9px;word-break:break-all;}
+.approv{background:var(--sbg);border:2px solid #66bb6a;border-radius:var(--r);padding:18px;margin-bottom:14px;display:none;animation:sldIn .3s ease;}
+.approv.show{display:block;}
+@keyframes sldIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.drink-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.drink-opt{padding:11px;border-radius:var(--rs);border:2px solid var(--latte);background:white;font-family:'Georgia',serif;font-size:14px;cursor:pointer;text-align:center;transition:all .15s;}
+.drink-opt .di{font-size:26px;display:block;margin-bottom:3px;}
+.drink-opt.sel{border-color:var(--crema);background:var(--latte);}
+.drink-opt.sel.cap{border-color:#b8845a;background:#f0e0d0;}
+.qty-row{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:14px;}
+.qty-btn{width:46px;height:46px;border-radius:50%;border:2px solid var(--crema);background:white;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--espresso);transition:all .15s;}
+.qty-btn:hover{background:var(--latte);}
+.qty-num{font-size:38px;color:var(--espresso);min-width:50px;text-align:center;}
+.cam-wrap{position:relative;border-radius:var(--r);overflow:hidden;background:#000;margin-bottom:12px;}
+.cam-wrap video{width:100%;display:block;max-height:260px;object-fit:cover;}
+.cam-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.cam-frame{width:170px;height:170px;border:3px solid var(--gold);border-radius:12px;position:relative;}
+.cam-frame::before,.cam-frame::after{content:'';position:absolute;width:20px;height:20px;border-color:var(--gold);border-style:solid;}
+.cam-frame::before{top:-3px;left:-3px;border-width:4px 0 0 4px;border-radius:4px 0 0 0;}
+.cam-frame::after{bottom:-3px;right:-3px;border-width:0 4px 4px 0;border-radius:0 0 4px 0;}
+.scan-line{position:absolute;left:8px;right:8px;height:2px;background:var(--gold);top:10%;animation:scanln 2s linear infinite;opacity:.8;}
+@keyframes scanln{0%{top:10%}100%{top:88%}}
+.hist-list{list-style:none;}
+.hist-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:.5px solid var(--latte);font-size:13px;}
+.hist-item:last-child{border:none;}
+.hist-icon{font-size:19px;min-width:27px;text-align:center;}
+.hist-name{color:var(--espresso);flex:1;}
+.hist-time{color:var(--muted);font-style:italic;font-size:11px;}
+.hist-pts{color:var(--gold);font-size:11px;font-weight:bold;}
+.empty{text-align:center;color:var(--muted);font-style:italic;font-size:14px;padding:18px 0;}
+.pin-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;padding:24px;}
+.pin-dots{display:flex;gap:12px;margin:18px 0;}
+.pin-dot{width:15px;height:15px;border-radius:50%;border:2px solid var(--crema);transition:all .15s;}
+.pin-dot.filled{background:var(--crema);}
+.pin-pad{display:grid;grid-template-columns:repeat(3,70px);gap:11px;}
+.pin-key{width:70px;height:70px;border-radius:50%;border:1px solid var(--latte);background:white;font-size:21px;font-family:'Georgia',serif;cursor:pointer;transition:all .15s;color:var(--espresso);}
+.pin-key:hover{background:var(--latte);}
+.pin-key:active{transform:scale(.93);background:var(--crema);color:white;}
+.pin-err{color:var(--danger);font-size:13px;font-style:italic;margin-top:7px;min-height:20px;text-align:center;}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;}
+.status-dot.green{background:#4caf50;}
+.status-dot.red{background:var(--danger);}
+.stat-row{display:flex;justify-content:space-between;font-size:14px;padding:8px 0;border-bottom:.5px solid var(--latte);}
+.stat-row:last-child{border:none;}
+.stat-row span:first-child{color:var(--muted);font-style:italic;}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--espresso);color:white;padding:10px 20px;border-radius:28px;font-size:14px;font-family:'Georgia',serif;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;border-top:2px solid var(--gold);max-width:90vw;text-align:center;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.big-toast{position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--espresso);color:white;padding:16px;text-align:center;font-family:'Georgia',serif;border-bottom:3px solid var(--gold);animation:sldIn .4s ease;line-height:1.5;}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.spin{animation:spin 1.2s linear infinite;display:inline-block;}
+.av-btn{width:52px;height:52px;border-radius:50%;border:2px solid var(--latte);background:white;font-size:24px;cursor:pointer;transition:all .15s;}
+.av-btn:hover,.av-btn.sel{border-color:var(--crema);background:var(--latte);}
+.ubadge{display:flex;align-items:center;gap:10px;background:var(--latte);border-radius:var(--rs);padding:10px 14px;margin-bottom:13px;}
+.uav{font-size:28px;}
+.uname{font-size:14px;color:var(--espresso);}
+.usub{font-size:12px;color:var(--muted);font-style:italic;}
+.uout{margin-left:auto;background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;font-family:'Georgia',serif;text-decoration:underline;font-style:italic;}
+.id-badge{display:inline-block;background:var(--espresso);color:var(--gold);font-family:monospace;font-size:11px;font-weight:bold;padding:2px 7px;border-radius:5px;margin-right:4px;}
+.id-big{font-family:monospace;font-size:26px;font-weight:bold;color:var(--gold);background:var(--espresso);padding:7px 16px;border-radius:10px;display:inline-block;}
+.search-wrap{position:relative;margin-bottom:12px;}
+.search-inp{width:100%;padding:10px 14px 10px 36px;border:1px solid var(--latte);border-radius:var(--rs);font-size:14px;font-family:'Georgia',serif;background:white;color:var(--text);outline:none;}
+.search-inp:focus{border-color:var(--crema);}
+.search-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;}
+.client-row{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:.5px solid var(--latte);cursor:pointer;}
+.client-row:last-child{border:none;}
+.client-row:hover{background:var(--foam);margin:0 -4px;padding-left:4px;padding-right:4px;border-radius:var(--rs);}
+.cr-av{font-size:26px;}
+.cr-info{flex:1;}
+.cr-name{font-size:14px;color:var(--espresso);}
+.cr-sub{font-size:12px;color:var(--muted);font-style:italic;}
+.cr-pts{text-align:right;}
+.cr-badge{font-size:12px;color:var(--crema);}
+.cr-alert-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold);margin-left:4px;animation:pgold 2s infinite;}
+</style>
+</head>
+<body>
+
+<div class="view" id="view-fb-setup">
+  <div style="max-width:480px;margin:0 auto;padding:0 0 40px;">
+
+    <div style="background:var(--espresso);padding:28px 24px 22px;text-align:center;border-bottom:3px solid var(--gold);">
+      <div style="font-size:44px;margin-bottom:8px;">☕</div>
+      <h1 style="font-size:22px;font-weight:normal;color:white;margin-bottom:4px;">Caffè Fedeltà</h1>
+      <p style="font-size:13px;color:rgba(255,255,255,.6);font-style:italic;">Configurazione iniziale — segui i passi</p>
+    </div>
+
+    <div style="display:flex;background:var(--latte);border-bottom:1px solid #e8d9c4;" id="setup-steps-bar">
+      <div id="sbar-1" style="flex:1;padding:10px 4px;text-align:center;font-size:11px;font-family:Georgia,serif;background:var(--espresso);color:var(--gold);border-bottom:2px solid var(--gold);">① Progetto</div>
+      <div id="sbar-2" style="flex:1;padding:10px 4px;text-align:center;font-size:11px;font-family:Georgia,serif;color:var(--muted);">② Database</div>
+      <div id="sbar-3" style="flex:1;padding:10px 4px;text-align:center;font-size:11px;font-family:Georgia,serif;color:var(--muted);">③ Regole</div>
+      <div id="sbar-4" style="flex:1;padding:10px 4px;text-align:center;font-size:11px;font-family:Georgia,serif;color:var(--muted);">④ API Key</div>
+    </div>
+
+    <div id="setup-step-1" style="padding:20px 18px;">
+      <div class="card" style="border-left:4px solid var(--gold);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="font-size:28px;">🔥</span>
+          <div>
+            <div style="font-size:16px;color:var(--espresso);">Crea il progetto Firebase</div>
+            <div style="font-size:12px;color:var(--muted);font-style:italic;">Gratuito — account Google richiesto</div>
+          </div>
+        </div>
+        <div style="background:var(--foam);border-radius:var(--rs);padding:14px;margin-bottom:14px;">
+          <div style="font-size:13px;color:var(--text);line-height:2.1;">
+            <b>1.</b> Clicca il bottone qui sotto per aprire Firebase Console<br>
+            <b>2.</b> Clicca <b>"Aggiungi progetto"</b><br>
+            <b>3.</b> Nome progetto: <code style="background:var(--latte);padding:2px 6px;border-radius:4px;">caffe-fedelta</code><br>
+            <b>4.</b> Disattiva Google Analytics (non serve)<br>
+            <b>5.</b> Clicca <b>"Crea progetto"</b> → attendi → <b>"Continua"</b>
+          </div>
+        </div>
+        <a href="https://console.firebase.google.com" target="_blank" class="btn btn-dark" style="text-decoration:none;display:flex;">
+          🔥 Apri Firebase Console
+        </a>
+        <div style="text-align:center;margin-top:4px;">
+          <button onclick="goSetupStep(2)" style="background:none;border:none;color:var(--success);font-size:14px;font-family:Georgia,serif;cursor:pointer;font-style:italic;">✅ Progetto creato → Avanti</button>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);font-style:italic;text-align:center;margin-top:8px;">Hai già un progetto Firebase? <button onclick="goSetupStep(2)" style="background:none;border:none;color:var(--crema);font-size:12px;font-family:Georgia,serif;cursor:pointer;text-decoration:underline;">Salta questo passo →</button></p>
+    </div>
+
+    <div id="setup-step-2" style="display:none;padding:20px 18px;">
+      <div class="card" style="border-left:4px solid var(--gold);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="font-size:28px;">🗄️</span>
+          <div>
+            <div style="font-size:16px;color:var(--espresso);">Crea il Realtime Database</div>
+            <div style="font-size:12px;color:var(--muted);font-style:italic;">Il database dove vengono salvati i punti</div>
+          </div>
+        </div>
+        <div style="background:var(--foam);border-radius:var(--rs);padding:14px;margin-bottom:14px;">
+          <div style="font-size:13px;color:var(--text);line-height:2.1;">
+            <b>1.</b> Nel tuo progetto Firebase, clicca il bottone qui sotto<br>
+            <b>2.</b> Nel menu a sinistra clicca <b>"Realtime Database"</b><br>
+            <b>3.</b> Clicca <b>"Crea database"</b><br>
+            <b>4.</b> Scegli regione <b>"europe-west1 (Belgium)"</b><br>
+            <b>5.</b> Seleziona <b>"Inizia in modalità test"</b><br>
+            <b>6.</b> Clicca <b>"Abilita"</b>
+          </div>
+        </div>
+        <a href="https://console.firebase.google.com" target="_blank" class="btn btn-dark" style="text-decoration:none;display:flex;">
+          🗄️ Apri Firebase Console
+        </a>
+        <div style="text-align:center;margin-top:4px;">
+          <button onclick="goSetupStep(3)" style="background:none;border:none;color:var(--success);font-size:14px;font-family:Georgia,serif;cursor:pointer;font-style:italic;">✅ Database creato → Avanti</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="setup-step-3" style="display:none;padding:20px 18px;">
+      <div class="card" style="border-left:4px solid var(--gold);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="font-size:28px;">🔒</span>
+          <div>
+            <div style="font-size:16px;color:var(--espresso);">Imposta le regole di accesso</div>
+            <div style="font-size:12px;color:var(--muted);font-style:italic;">Permette all'app di leggere e scrivere</div>
+          </div>
+        </div>
+        <div style="background:var(--foam);border-radius:var(--rs);padding:14px;margin-bottom:14px;">
+          <div style="font-size:13px;color:var(--text);line-height:2.1;">
+            <b>1.</b> Nel Realtime Database clicca il tab <b>"Regole"</b><br>
+            <b>2.</b> Sostituisci tutto il testo con quello qui sotto:<br>
+          </div>
+          <div style="background:var(--espresso);color:var(--gold);font-family:monospace;font-size:12px;padding:12px;border-radius:var(--rs);margin-top:10px;line-height:1.8;">
+            {<br>
+            &nbsp;&nbsp;"rules": {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;"bars": {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"$uid": {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".read": true,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".write": "auth != null && auth.uid == $uid"<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+            &nbsp;&nbsp;}<br>
+            }
+          </div>
+          <button onclick="copyRules()" style="background:none;border:1px solid var(--crema);color:var(--crema);font-size:12px;font-family:Georgia,serif;cursor:pointer;padding:6px 12px;border-radius:var(--rs);margin-top:8px;width:100%;">📋 Copia le regole</button>
+          <div style="font-size:13px;color:var(--text);line-height:2.1;margin-top:10px;">
+            <b>3.</b> Clicca il bottone <b>"Pubblica"</b> in alto a destra
+          </div>
+        </div>
+        <a href="https://console.firebase.google.com" target="_blank" class="btn btn-dark" style="text-decoration:none;display:flex;">
+          🔒 Apri Firebase Console
+        </a>
+        <div style="text-align:center;margin-top:4px;">
+          <button onclick="goSetupStep(4)" style="background:none;border:none;color:var(--success);font-size:14px;font-family:Georgia,serif;cursor:pointer;font-style:italic;">✅ Regole pubblicate → Avanti</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="setup-step-4" style="display:none;padding:20px 18px;">
+      <div class="card" style="border-left:4px solid var(--gold);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="font-size:28px;">🔑</span>
+          <div>
+            <div style="font-size:16px;color:var(--espresso);">Copia la API Key</div>
+            <div style="font-size:12px;color:var(--muted);font-style:italic;">L'ultima cosa — promesso!</div>
+          </div>
+        </div>
+        <div style="background:var(--foam);border-radius:var(--rs);padding:14px;margin-bottom:14px;">
+          <div style="font-size:13px;color:var(--text);line-height:2.1;">
+            <b>1.</b> Clicca il bottone qui sotto (apre Google Cloud Credentials)<br>
+            <b>2.</b> Nella lista <b>"Chiavi API"</b> trova la chiave del progetto <code style="background:var(--latte);padding:2px 6px;border-radius:4px;">bar-tessera-fedelta</code><br>
+            <b>3.</b> Clicca sulla chiave per aprirla<br>
+            <b>4.</b> Copia il valore dal campo <b>"Chiave API"</b> (inizia con <code style="background:var(--latte);padding:2px 6px;border-radius:4px;">AIzaSy...</code>)<br>
+            <b>⚠️</b> <em>Non usare la chiave da Firebase Console — usa solo quella di Google Cloud per il reset password</em><br>
+            <b>5.</b> Incolla qui sotto 👇
+          </div>
+        </div>
+        <a href="https://console.cloud.google.com/apis/credentials?project=bar-tessera-fedelta" target="_blank" class="btn btn-ghost" style="text-decoration:none;display:flex;margin-bottom:14px;">
+          🔑 Apri Google Cloud Credentials
+        </a>
+        <label class="lbl">Incolla qui la tua API Key</label>
+        <input class="inp" id="fb-apikey" type="text" placeholder="AIzaSy..." autocomplete="off" style="font-family:monospace;font-size:13px;letter-spacing:.5px;">
+        <button class="btn btn-dark" onclick="saveFbConfig()" id="fb-save-btn">🚀 Salva e avvia l'app</button>
+        <p id="fb-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+      </div>
+      <p style="font-size:12px;color:var(--muted);font-style:italic;text-align:center;margin-top:8px;">La chiave viene salvata solo sul tuo dispositivo, mai online.</p>
+    </div>
+
+  </div>
+</div>
+
+<div class="view" id="view-home-cliente">
+  <div style="max-width:420px;margin:0 auto;padding:36px 20px 32px;text-align:center;">
+    <div style="font-size:56px;margin-bottom:12px;">☕</div>
+    <h1 style="font-size:24px;font-weight:normal;color:var(--espresso);margin-bottom:4px;">Caffè Fedeltà</h1>
+    <p id="home-cl-nomebar" style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:28px;min-height:18px;"></p>
+
+    <!-- Se il cliente ha già una tessera -->
+    <button onclick="accessoClienteEmail()" style="width:100%;padding:20px;border-radius:var(--r);border:none;font-family:'Georgia',serif;cursor:pointer;background:var(--espresso);color:white;box-shadow:0 4px 20px rgba(44,24,16,.25);text-align:center;margin-bottom:12px;">
+      <span style="font-size:30px;display:block;margin-bottom:7px;">🔑</span>
+      <div style="font-size:16px;margin-bottom:2px;">Già cliente? Accedi</div>
+      <div style="font-size:12px;opacity:.7;font-style:italic;">Email o numero tessera · PIN</div>
+    </button>
+
+    <!-- Registrazione nuovo cliente via QR -->
+    <div style="background:white;border-radius:var(--r);border:1px solid var(--latte);padding:18px;margin-bottom:12px;text-align:left;">
+      <div style="font-size:14px;color:var(--espresso);margin-bottom:6px;text-align:center;">🆕 Prima volta? Registrati</div>
+      <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:12px;text-align:center;line-height:1.6;">Scansiona il QR del barista con la fotocamera<br>per registrarti in 30 secondi.</p>
+
+      <!-- Se QR non disponibile: selezione locale da lista -->
+      <div style="border-top:1px solid var(--latte);margin-top:10px;padding-top:10px;">
+        <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px;text-align:center;">QR non disponibile? Scegli il locale dalla lista:</p>
+        <div id="home-locali-list" style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px;">
+          <p class="empty" style="font-size:12px;">Nessun locale registrato in questo link.</p>
+        </div>
+        <button onclick="caricaListaLocali()" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--crema);background:none;font-family:'Georgia',serif;font-size:12px;color:var(--crema);cursor:pointer;">
+          🔄 Aggiorna lista locali
+        </button>
+      </div>
+    </div>
+
+    <!-- Accesso barista (link discreto in basso) -->
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--latte);">
+      <button onclick="showView('view-auth');showPanel('auth-login-panel')" style="background:none;border:none;color:var(--muted);font-size:12px;font-style:italic;cursor:pointer;font-family:'Georgia',serif;">
+        👨‍💼 Sei il gestore? Accedi all'area barista →
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<div class="view active" id="view-splash">
+  <div class="centered">
+    <div style="font-size:64px;margin-bottom:16px;">☕</div>
+    <h1 style="font-size:26px;font-weight:normal;color:var(--espresso);margin-bottom:8px;">Caffè Fedeltà</h1>
+    <p style="font-size:14px;color:var(--muted);font-style:italic;"><span class="spin">⏳</span> Caricamento...</p>
+  </div>
+</div>
+
+<div class="view" id="view-auth">
+  <div style="max-width:420px;margin:0 auto;padding:40px 24px;text-align:center;">
+    <div style="font-size:56px;margin-bottom:14px;">☕</div>
+    <h1 style="font-size:24px;font-weight:normal;color:var(--espresso);margin-bottom:6px;">Caffè Fedeltà</h1>
+    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:28px;">Accesso barista</p>
+
+    <div id="auth-login-panel" class="card" style="text-align:left;">
+      <h2 style="margin-bottom:14px;">Accedi al tuo bar</h2>
+      <label class="lbl">Email</label>
+      <input class="inp" id="auth-email" type="email" placeholder="bar@email.com" autocomplete="email">
+      <label class="lbl">Password</label>
+      <input class="inp" id="auth-pwd" type="password" placeholder="••••••••" autocomplete="current-password">
+      <button class="btn btn-dark" id="auth-login-btn" onclick="doLogin()">🔑 Accedi</button>
+      <p id="auth-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+      <div style="text-align:center;margin-top:8px;">
+        <button onclick="showPanel('auth-reset-panel')" style="background:none;border:none;color:var(--crema);font-size:13px;font-style:italic;cursor:pointer;font-family:'Georgia',serif;text-decoration:underline;">Password dimenticata?</button>
+      </div>
+      <div style="text-align:center;margin-top:6px;">
+        <button onclick="showPanel('auth-reg-panel')" style="background:none;border:none;color:var(--muted);font-size:12px;font-style:italic;cursor:pointer;font-family:'Georgia',serif;">Primo accesso? Registra il tuo bar →</button>
+      </div>
+    </div>
+
+    <div id="auth-reg-panel" class="card" style="text-align:left;display:none;">
+      <h2 style="margin-bottom:14px;">Registra il tuo bar</h2>
+      <label class="lbl">Nome del bar</label>
+      <input class="inp" id="reg-nomebar" type="text" placeholder="es. Bar Centrale" autocomplete="organization">
+      <label class="lbl">Email</label>
+      <input class="inp" id="reg-email" type="email" placeholder="bar@email.com" autocomplete="email">
+      <label class="lbl">Password (min. 6 caratteri)</label>
+      <input class="inp" id="reg-pwd" type="password" placeholder="••••••••" autocomplete="new-password">
+      <button class="btn btn-dark" id="auth-reg-btn" onclick="doRegister()">☕ Crea account</button>
+      <p id="reg-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+      <div style="text-align:center;margin-top:6px;">
+        <button onclick="showPanel('auth-login-panel')" style="background:none;border:none;color:var(--muted);font-size:12px;font-style:italic;cursor:pointer;font-family:'Georgia',serif;">← Torna al login</button>
+      </div>
+    </div>
+
+    <div id="auth-reset-panel" class="card" style="text-align:left;display:none;">
+      <h2 style="margin-bottom:14px;">Reset password</h2>
+      <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:14px;line-height:1.6;">Inserisci la tua email. Ti manderemo un link per impostare una nuova password.</p>
+      <label class="lbl">Email</label>
+      <input class="inp" id="reset-email" type="email" placeholder="bar@email.com" autocomplete="email">
+      <button class="btn btn-ghost" id="auth-reset-btn" onclick="doReset()">📧 Invia link reset</button>
+      <p id="reset-msg" style="font-size:13px;font-style:italic;margin-top:6px;display:none;"></p>
+      <div style="text-align:center;margin-top:6px;">
+        <button onclick="showPanel('auth-login-panel')" style="background:none;border:none;color:var(--muted);font-size:12px;font-style:italic;cursor:pointer;font-family:'Georgia',serif;">← Torna al login</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="view" id="view-mode">
+  <div style="max-width:420px;margin:0 auto;padding:32px 20px 24px;">
+
+    <!-- Header con nome bar -->
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:48px;margin-bottom:10px;">☕</div>
+      <h1 style="font-size:22px;font-weight:normal;color:var(--espresso);margin-bottom:4px;">Pannello Gestore</h1>
+      <div id="mode-nomebar-badge" style="display:inline-flex;align-items:center;gap:6px;background:var(--espresso);color:var(--gold);padding:5px 14px;border-radius:99px;font-size:13px;font-style:italic;margin-top:4px;">
+        <span>🏠</span><span id="mode-nomebar"></span>
+      </div>
+    </div>
+
+    <!-- Selezione / aggiunta locali -->
+    <div id="mode-locali-box" style="margin-bottom:18px;display:none;">
+      <div style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:7px;text-align:center;">I tuoi locali — seleziona quale gestire</div>
+      <div id="mode-locali-list" style="display:flex;flex-direction:column;gap:7px;"></div>
+      <button onclick="mostraFormNuovoLocale()" style="width:100%;margin-top:8px;padding:10px;border-radius:var(--rs);border:2px dashed var(--crema);background:none;font-family:'Georgia',serif;font-size:13px;color:var(--crema);cursor:pointer;">
+        + Aggiungi un altro locale
+      </button>
+    </div>
+    <div id="mode-nuovo-locale-form" style="display:none;background:white;border-radius:var(--r);padding:14px;border:1px solid var(--latte);margin-bottom:14px;">
+      <div style="font-size:13px;color:var(--espresso);margin-bottom:10px;font-weight:bold;">🏠 Nuovo locale</div>
+      <label class="lbl">Nome locale</label>
+      <input class="inp" id="nuovo-locale-nome" type="text" placeholder="es. Bar Centrale Sede 2">
+      <label class="lbl">PIN accesso (4 cifre)</label>
+      <input class="inp" id="nuovo-locale-pin" type="password" placeholder="es. 1234" maxlength="4" inputmode="numeric">
+      <div style="display:flex;gap:8px;">
+        <button onclick="creaLocale()" class="btn btn-dark" style="flex:1;margin-bottom:0;">✅ Crea locale</button>
+        <button onclick="document.getElementById('mode-nuovo-locale-form').style.display='none'" class="btn btn-ghost" style="width:auto;padding:11px 14px;margin-bottom:0;">✕</button>
+      </div>
+    </div>
+
+    <!-- Accesso barista -->
+    <button onclick="enterBarista()" style="width:100%;padding:20px;border-radius:var(--r);border:none;font-family:'Georgia',serif;cursor:pointer;background:var(--espresso);color:white;box-shadow:0 4px 20px rgba(44,24,16,.25);text-align:center;margin-bottom:12px;">
+      <span style="font-size:32px;display:block;margin-bottom:7px;">👨‍💼</span>
+      <div style="font-size:16px;margin-bottom:2px;">Entra nel pannello barista</div>
+      <div style="font-size:12px;opacity:.7;font-style:italic;">Genera QR · Gestisci clienti · Statistiche</div>
+    </button>
+
+    <!-- Aggiungi cliente manualmente -->
+    <button onclick="apriAggiungiClienteManuale()" style="width:100%;padding:18px;border-radius:var(--r);border:1px solid var(--latte);font-family:'Georgia',serif;cursor:pointer;background:white;color:var(--text);box-shadow:0 2px 10px rgba(44,24,16,.08);text-align:center;margin-bottom:18px;">
+      <span style="font-size:28px;display:block;margin-bottom:7px;">➕</span>
+      <div style="font-size:15px;margin-bottom:2px;color:var(--espresso);">Aggiungi manualmente un cliente</div>
+      <div style="font-size:12px;opacity:.6;font-style:italic;">Inserisci nome, cognome, email e PIN iniziale</div>
+    </button>
+
+    <button onclick="doLogout()" style="background:none;border:none;color:var(--muted);font-size:11px;font-style:italic;cursor:pointer;width:100%;text-align:center;padding:6px;text-decoration:underline;font-family:'Georgia',serif;">Esci dall'account →</button>
+  </div>
+</div>
+
+<!-- Modal aggiungi cliente manuale -->
+<div id="modal-add-cliente" style="display:none;position:fixed;inset:0;background:rgba(44,24,16,.5);z-index:100;overflow-y:auto;">
+  <div style="max-width:420px;margin:40px auto;background:var(--foam);border-radius:var(--r);padding:24px 20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h2 style="font-size:16px;color:var(--espresso);font-weight:normal;">➕ Nuovo cliente</h2>
+      <button onclick="chiudiModalCliente()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);">✕</button>
+    </div>
+    <div class="card">
+      <label class="lbl">Nome *</label>
+      <input class="inp" id="mc-nome" type="text" placeholder="es. Mario" autocomplete="given-name">
+      <label class="lbl">Cognome</label>
+      <input class="inp" id="mc-cognome" type="text" placeholder="es. Rossi" autocomplete="family-name">
+      <label class="lbl">Email *</label>
+      <input class="inp" id="mc-email" type="email" placeholder="mario@email.com" autocomplete="email">
+      <label class="lbl">PIN iniziale (4 cifre) — il cliente lo cambierà al primo accesso *</label>
+      <input class="inp" id="mc-pin" type="text" placeholder="es. 1234" maxlength="4" inputmode="numeric" pattern="[0-9]{4}">
+      <p style="font-size:11px;color:var(--muted);font-style:italic;margin-bottom:12px;line-height:1.5;">Il cliente riceverà questo PIN per accedere. Potrà cambiarlo dal suo profilo.</p>
+      <button class="btn btn-dark" id="mc-btn" onclick="salvaClienteManuale()">☕ Crea carta fedeltà</button>
+      <p id="mc-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+      <p id="mc-ok" style="color:var(--success);font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+    </div>
+  </div>
+</div>
+
+<div class="view" id="view-barista">
+  <nav class="nav">
+    <button class="nav-btn active" onclick="bTab('qr')" id="bnav-qr">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3m0 4h4v-4m-7 4h3"/></svg>
+      QR Live
+    </button>
+    <button class="nav-btn" onclick="bTab('clienti')" id="bnav-clienti">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Clienti
+    </button>
+    <button class="nav-btn" onclick="bTab('stats')" id="bnav-stats">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 20h18M8 20V10M12 20V4M16 20v-6"/></svg>
+      Stats
+    </button>
+    <button class="nav-btn" onclick="showView('view-mode')" style="color:rgba(255,255,255,.4);font-size:10px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 16l4-4m0 0l-4-4m4 4H7"/></svg>
+      Esci
+    </button>
+  </nav>
+
+  <div class="page active" id="bpage-qr">
+    <div class="approv" id="approv-cons">
+      <div style="font-size:16px;font-weight:normal;color:var(--success);margin-bottom:4px;">🔔 Cliente in attesa!</div>
+      <p id="approv-who" style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:14px;"></p>
+      <div class="drink-toggle">
+        <button class="drink-opt sel" id="ao-c" onclick="selAD('caffe')"><span class="di">☕</span>Caffè</button>
+        <button class="drink-opt" id="ao-k" onclick="selAD('cappuccino')"><span class="di">🥛</span>Cappuccino</button>
+      </div>
+      <div class="qty-row">
+        <button class="qty-btn" onclick="chgQty(-1)">−</button>
+        <div class="qty-num" id="a-qty">1</div>
+        <button class="qty-btn" onclick="chgQty(1)">+</button>
+      </div>
+      <button class="btn btn-success" onclick="approvaConsumo()">✅ Approva — <span id="a-lbl">1 caffè</span></button>
+      <button class="btn btn-ghost" onclick="rifiutaConsumo()">✕ Rifiuta</button>
+    </div>
+
+    <div class="approv" id="approv-riscatto" style="background:#fffdf0;border-color:var(--gold);">
+      <div style="font-size:16px;font-weight:normal;color:var(--dark-gold);margin-bottom:4px;">🎁 Richiesta omaggio!</div>
+      <p id="riscatto-who" style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:14px;"></p>
+      <button class="btn btn-gold" onclick="approvaRiscatto()">✅ Approva omaggio gratuito</button>
+      <button class="btn btn-ghost" onclick="rifiutaRiscatto()">✕ Rifiuta</button>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <h2 style="margin:0;">QR Code attivo</h2>
+        <span style="font-size:12px;color:var(--muted);"><span class="status-dot green" id="cdot"></span><span id="clbl">connesso</span></span>
+      </div>
+      <div class="qr-box">
+        <div id="qrcode-barista"></div>
+        <div style="margin-top:10px;">
+          <div class="qr-timer-bar"><div class="qr-timer-fill" id="qfill" style="width:100%"></div></div>
+          <div class="qr-timer-label">Rinnovo tra <span id="qcd">30</span>s</div>
+        </div>
+        <code class="qr-token" id="qtok"></code>
+      </div>
+      <button class="btn btn-ghost" onclick="forceQR()">🔄 Rinnova subito</button>
+    </div>
+    <div style="background:var(--latte);border-radius:var(--rs);padding:12px;font-size:13px;color:var(--muted);font-style:italic;line-height:1.8;">
+      1. Mostra il QR al cliente<br>
+      2. Il cliente scansiona col telefono<br>
+      3. Approva la consumazione qui sopra
+    </div>
+  </div>
+
+  <div class="page" id="bpage-clienti">
+    <div class="hdr"><span class="cup">👥</span><h1>Clienti registrati</h1></div>
+    <div class="search-wrap">
+      <span class="search-ico">🔍</span>
+      <input class="search-inp" id="b-search" type="text" placeholder="Cerca nome, cognome, email o tessera..." oninput="filterClienti(this.value)">
+    </div>
+    <div id="b-omaggi-alert" style="display:none;background:#fffdf0;border:2px solid var(--gold);border-radius:var(--r);padding:14px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="font-size:22px;">🎁</span>
+        <strong style="color:var(--dark-gold);font-size:14px;">Omaggi disponibili</strong>
+      </div>
+      <div id="b-omaggi-nomi"></div>
+    </div>
+    <div class="card" id="clienti-list"><p class="empty">Nessun cliente ancora.</p></div>
+  </div>
+
+  <div class="page" id="bpage-stats">
+    <div class="hdr"><span class="cup">📊</span><h1>Statistiche</h1></div>
+    <div class="card">
+      <div class="stat-row"><span>☕ Caffè assegnati</span><span id="bs-c">0</span></div>
+      <div class="stat-row"><span>🥛 Cappuccini assegnati</span><span id="bs-k">0</span></div>
+      <div class="stat-row"><span>🎁 Omaggi erogati</span><span id="bs-o">0</span></div>
+      <div class="stat-row"><span>👤 Clienti registrati</span><span id="bs-u">0</span></div>
+    </div>
+    <div class="card"><h2>Ultime operazioni</h2><ul class="hist-list" id="bs-hist"></ul></div>
+    <button class="btn btn-ghost" onclick="doLogout()">🚪 Esci dall'account barista</button>
+  </div>
+</div>
+
+<div class="view" id="view-scheda">
+  <nav class="nav" style="justify-content:flex-start;">
+    <button class="back-btn" onclick="showView('view-barista');bTab('clienti')">← Clienti</button>
+    <span style="color:rgba(255,255,255,.7);font-size:13px;padding:12px 0;font-family:'Georgia',serif;" id="scheda-nav-name"></span>
+  </nav>
+  <div style="max-width:480px;margin:0 auto;padding:14px;" id="scheda-body"></div>
+</div>
+
+<div class="view" id="view-cl">
+
+  <div id="cl-accedi" style="display:none;max-width:480px;margin:0 auto;padding:22px 18px;">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:50px;margin-bottom:9px;">☕</div>
+      <h1 style="font-size:22px;font-weight:normal;color:var(--espresso);margin-bottom:5px;">La mia carta fedeltà</h1>
+    </div>
+
+    <div id="cl-bar-status" style="display:none;background:var(--sbg);border:1px solid #a5d6a7;border-radius:var(--rs);padding:9px 13px;font-size:12px;color:var(--success);font-style:italic;margin-bottom:12px;text-align:center;">
+      ✅ Bar collegato
+    </div>
+    <div id="cl-nobar-status" style="display:none;background:#fff8e8;border:1px solid var(--gold);border-radius:var(--rs);padding:9px 13px;font-size:12px;color:var(--dark-gold);font-style:italic;margin-bottom:12px;text-align:center;">
+      ℹ️ Prima volta? Scansiona il QR del tuo bar per collegarlo
+    </div>
+
+    <div style="background:var(--espresso);border-radius:var(--r);padding:16px 18px;margin-bottom:14px;">
+      <div style="color:var(--gold);font-size:15px;margin-bottom:14px;">🔑 Sei già cliente?</div>
+      <label class="lbl" style="color:rgba(255,255,255,.7);">La tua email</label>
+      <input class="inp" id="acc-email" type="email" placeholder="mario@email.com" autocomplete="email" style="margin-bottom:10px;">
+      <button class="btn btn-gold" id="acc-btn" onclick="accediConEmail()" style="margin-bottom:6px;">☕ Accedi con email</button>
+      <div style="text-align:center;color:rgba(255,255,255,.5);font-size:12px;margin:8px 0;">oppure</div>
+      <label class="lbl" style="color:rgba(255,255,255,.7);">Numero tessera</label>
+      <input class="inp" id="acc-id" type="number" placeholder="es. 42" inputmode="numeric" style="margin-bottom:10px;">
+      <button class="btn btn-ghost" id="acc-id-btn" onclick="accediConId()" style="border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.8);">🔢 Accedi con numero tessera</button>
+      <p id="acc-err" style="color:#ffb3b3;font-size:13px;font-style:italic;margin-top:6px;display:none;"></p>
+    </div>
+
+    <div style="background:white;border-radius:var(--r);border:1px solid var(--latte);padding:16px 18px;text-align:center;">
+      <div style="font-size:14px;color:var(--espresso);margin-bottom:6px;">🆕 Prima volta al bar?</div>
+      <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px;line-height:1.6;">Chiedi al barista di mostrarti il QR code.<br>Scansionalo per registrarti in 30 secondi.</p>
+      <div style="font-size:11px;color:var(--muted);font-style:italic;">📱 Usa la fotocamera del tuo telefono</div>
+    </div>
+  </div>
+
+  <div id="cl-pin" style="display:none;">
+    <div class="pin-screen">
+      <div style="font-size:42px;margin-bottom:8px;" id="cl-pin-avatar">😊</div>
+      <div style="font-size:17px;color:var(--espresso);margin-bottom:4px;" id="cl-pin-nome"></div>
+      <p style="font-size:13px;color:var(--muted);font-style:italic;">Inserisci il tuo PIN</p>
+      <div class="pin-dots" id="cl-pin-dots">
+        <div class="pin-dot" id="cp0"></div><div class="pin-dot" id="cp1"></div>
+        <div class="pin-dot" id="cp2"></div><div class="pin-dot" id="cp3"></div>
+      </div>
+      <div class="pin-err" id="cl-pin-err"></div>
+      <div class="pin-pad">
+        <button class="pin-key" onclick="clPinKey('1')">1</button><button class="pin-key" onclick="clPinKey('2')">2</button><button class="pin-key" onclick="clPinKey('3')">3</button>
+        <button class="pin-key" onclick="clPinKey('4')">4</button><button class="pin-key" onclick="clPinKey('5')">5</button><button class="pin-key" onclick="clPinKey('6')">6</button>
+        <button class="pin-key" onclick="clPinKey('7')">7</button><button class="pin-key" onclick="clPinKey('8')">8</button><button class="pin-key" onclick="clPinKey('9')">9</button>
+        <button class="pin-key" onclick="clPinKey('del')" style="font-size:15px;">⌫</button>
+        <button class="pin-key" onclick="clPinKey('0')">0</button>
+        <button class="pin-key" onclick="clPinKey('ok')" style="font-size:13px;background:var(--espresso);color:white;border-color:var(--espresso);">OK</button>
+      </div>
+      <button onclick="showClSub('cl-accedi')" style="margin-top:16px;background:none;border:none;color:var(--muted);font-size:12px;font-style:italic;cursor:pointer;font-family:'Georgia',serif;text-decoration:underline;">← Torna indietro</button>
+    </div>
+  </div>
+
+  <div id="cl-loading" style="display:none;text-align:center;padding:60px 20px;">
+    <div style="font-size:44px;" class="spin">⏳</div>
+    <p style="margin-top:12px;font-size:14px;color:var(--muted);font-style:italic;">Connessione in corso...</p>
+  </div>
+
+  <div id="cl-register" style="display:none;max-width:480px;margin:0 auto;padding:24px 18px;">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:50px;margin-bottom:9px;">☕</div>
+      <h1 style="font-size:22px;font-weight:normal;color:var(--espresso);margin-bottom:5px;">Benvenuto!</h1>
+      <p style="font-size:13px;color:var(--muted);font-style:italic;">Prima registrazione — ci vogliono 30 secondi</p>
+    </div>
+    <div class="card">
+      <label class="lbl">Nome</label>
+      <input class="inp" id="r-nome" type="text" placeholder="es. Mario" autocomplete="given-name">
+      <label class="lbl">Cognome</label>
+      <input class="inp" id="r-cognome" type="text" placeholder="es. Rossi" autocomplete="family-name">
+      <label class="lbl">Email</label>
+      <input class="inp" id="r-email" type="email" placeholder="mario@email.com" autocomplete="email">
+      <label class="lbl">Scegli un PIN (4 cifre) — per accedere senza QR</label>
+      <input class="inp" id="r-pin" type="password" placeholder="es. 1234" maxlength="4" inputmode="numeric">
+      <label class="lbl">Scegli un avatar</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px;" id="r-avatars"></div>
+      <button class="btn btn-dark" id="r-btn" onclick="registerCliente()">☕ Crea la mia carta fedeltà</button>
+      <p id="r-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:3px;display:none;"></p>
+    </div>
+  </div>
+
+  <div id="cl-waiting" style="display:none;max-width:480px;margin:0 auto;padding:24px 18px;">
+    <div id="cl-user-badge-wait" class="ubadge" style="display:none;"></div>
+    <div class="card" style="text-align:center;padding:30px 16px;">
+      <div style="font-size:46px;margin-bottom:12px;"><span class="spin">⏳</span></div>
+      <h3 style="font-size:18px;font-weight:normal;color:var(--espresso);margin-bottom:8px;">In attesa del barista...</h3>
+      <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:16px;">Il barista sta scegliendo la tua consumazione.</p>
+      <div style="height:4px;background:var(--latte);border-radius:99px;overflow:hidden;">
+        <div id="cl-wbar" style="height:100%;background:var(--gold);width:100%;transition:width 1s linear;"></div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);font-style:italic;margin-top:6px;"><span id="cl-wsecs">60</span>s rimanenti</p>
+    </div>
+  </div>
+
+  <div id="cl-deny" style="display:none;max-width:480px;margin:0 auto;padding:24px 18px;">
+    <div class="alert alert-danger">
+      <div class="ai">❌</div>
+      <p><strong>Richiesta rifiutata</strong>Il barista ha annullato la richiesta. Riprova.</p>
+    </div>
+    <button class="btn btn-ghost" onclick="showClSub('cl-accedi')">← Torna indietro</button>
+  </div>
+
+  <div id="cl-carta" style="display:none;">
+    <nav class="nav">
+      <button class="nav-btn active" onclick="clTab('punti')" id="cln-punti">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 8h1a4 4 0 010 8h-1"/><path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/></svg>
+        La mia carta
+      </button>
+      <button class="nav-btn" onclick="clTab('storico')" id="cln-storico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
+        Storico
+      </button>
+      <button class="nav-btn" onclick="clTab('notifiche')" id="cln-notifiche">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        Notifiche
+      </button>
+      <button class="nav-btn" onclick="clTab('profilo')" id="cln-profilo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Profilo
+      </button>
+    </nav>
+
+    <div id="cl-tab-punti" style="max-width:480px;margin:0 auto;padding:14px;">
+      <div id="cl-carta-badge" class="ubadge"></div>
+      <div id="cl-id-box" style="display:none;text-align:center;background:var(--espresso);border-radius:var(--r);padding:12px;margin-bottom:13px;">
+        <div style="font-size:11px;color:rgba(255,255,255,.6);font-style:italic;margin-bottom:5px;">Il tuo numero tessera</div>
+        <div id="cl-id-num" class="id-big"></div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);font-style:italic;margin-top:5px;">Comunicalo al barista se non hai il telefono</div>
+      </div>
+      <div class="alert alert-gold" id="cl-free-c" style="display:none;">
+        <div class="ai">🎉</div>
+        <p><strong>Caffè GRATIS disponibile!</strong>Mostra questa schermata al barista.</p>
+      </div>
+      <div class="alert alert-gold" id="cl-free-k" style="display:none;">
+        <div class="ai">🎉</div>
+        <p><strong>Cappuccino GRATIS disponibile!</strong>Mostra questa schermata al barista.</p>
+      </div>
+      <div class="card">
+        <h2>☕ Caffè — progressi</h2>
+        <div class="stamp-row"><div class="stamp-grid" id="cl-sg-c1"></div></div>
+        <div class="stamp-row" style="margin-top:20px;"><div class="stamp-grid" id="cl-sg-c2"></div></div>
+        <div class="prog-bar"><div class="prog-fill" id="cl-prog-c" style="width:0%"></div></div>
+        <div class="prog-labels"><span id="cl-ptxt-c">0 / 10</span><span id="cl-ppct-c">0%</span></div>
+      </div>
+      <div class="card">
+        <h2>🥛 Cappuccini — progressi</h2>
+        <div class="stamp-row"><div class="stamp-grid" id="cl-sg-k1"></div></div>
+        <div class="stamp-row" style="margin-top:20px;"><div class="stamp-grid" id="cl-sg-k2"></div></div>
+        <div class="prog-bar"><div class="prog-fill" id="cl-prog-k" style="width:0%"></div></div>
+        <div class="prog-labels"><span id="cl-ptxt-k">0 / 10</span><span id="cl-ppct-k">0%</span></div>
+      </div>
+      <div class="card">
+        <h2>📊 I miei totali</h2>
+        <div class="totals">
+          <div class="tot-item"><div class="tot-num" id="cl-nc">0</div><div class="tot-label">☕ caffè</div></div>
+          <div class="tot-item"><div class="tot-num" id="cl-nk">0</div><div class="tot-label">🥛 cappuccini</div></div>
+          <div class="tot-item gold"><div class="tot-num" id="cl-no">0</div><div class="tot-label">🎁 omaggi</div></div>
+          <div class="tot-item"><div class="tot-num" id="cl-np">0</div><div class="tot-label">⭐ punti ciclo</div></div>
+        </div>
+      </div>
+      <div id="cl-redeem-c" style="display:none;" class="card">
+        <h2>🎁 Riscatta caffè omaggio</h2>
+        <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px;">Hai raggiunto 10 caffè! Chiedi l'approvazione al barista.</p>
+        <button class="btn btn-gold" onclick="richiestaRiscatto('caffe')">☕ Richiedi caffè gratuito</button>
+      </div>
+      <div id="cl-redeem-k" style="display:none;" class="card">
+        <h2>🎁 Riscatta cappuccino omaggio</h2>
+        <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px;">Hai raggiunto 10 cappuccini! Chiedi l'approvazione al barista.</p>
+        <button class="btn btn-gold" onclick="richiestaRiscatto('cappuccino')">🥛 Richiedi cappuccino gratuito</button>
+      </div>
+      <div class="card" style="background:var(--latte);border:1px dashed var(--crema);text-align:center;">
+        <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:6px;">Vuoi aggiungere un'altra consumazione?</p>
+        <p style="font-size:12px;color:var(--muted);font-style:italic;">Torna al bar e fai scansionare il QR 📲</p>
+      </div>
+      <button onclick="logoutCliente()" style="background:none;border:none;color:var(--muted);font-size:12px;font-style:italic;cursor:pointer;width:100%;text-align:center;padding:8px;text-decoration:underline;font-family:'Georgia',serif;">Cambia account</button>
+    </div>
+
+    <div id="cl-tab-storico" style="display:none;max-width:480px;margin:0 auto;padding:14px;">
+      <div class="card"><ul class="hist-list" id="cl-hist"></ul></div>
+    </div>
+
+    <div id="cl-tab-notifiche" style="display:none;max-width:480px;margin:0 auto;padding:14px;">
+      <div class="card" id="cl-notif-list"><p class="empty">Nessuna notifica.</p></div>
+    </div>
+
+    <div id="cl-tab-profilo" style="display:none;max-width:480px;margin:0 auto;padding:14px;">
+      <div class="hdr"><span class="cup">👤</span><h1>Il mio profilo</h1></div>
+
+      <div class="card">
+        <h2 style="margin-bottom:14px;">Modifica i tuoi dati</h2>
+        <label class="lbl">Nome</label>
+        <input class="inp" id="prof-nome" type="text" placeholder="es. Mario" autocomplete="given-name">
+        <label class="lbl">Cognome</label>
+        <input class="inp" id="prof-cognome" type="text" placeholder="es. Rossi" autocomplete="family-name">
+        <label class="lbl">Email</label>
+        <input class="inp" id="prof-email" type="email" placeholder="mario@email.com" autocomplete="email">
+        <button class="btn btn-dark" onclick="salvaProfilo()">💾 Salva modifiche</button>
+        <p id="prof-msg" style="font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-bottom:14px;">Cambia PIN</h2>
+        <label class="lbl">PIN attuale</label>
+        <input class="inp" id="prof-pin-old" type="password" placeholder="••••" maxlength="4" inputmode="numeric">
+        <label class="lbl">Nuovo PIN (4 cifre)</label>
+        <input class="inp" id="prof-pin-new" type="password" placeholder="••••" maxlength="4" inputmode="numeric">
+        <label class="lbl">Conferma nuovo PIN</label>
+        <input class="inp" id="prof-pin-new2" type="password" placeholder="••••" maxlength="4" inputmode="numeric">
+        <button class="btn btn-ghost" onclick="cambiaPin()">🔑 Aggiorna PIN</button>
+        <p id="pin-msg" style="font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+      </div>
+
+      <div class="card" style="background:var(--espresso);border:none;">
+        <h2 style="color:var(--gold);margin-bottom:10px;">📱 Aggiungi alla schermata Home</h2>
+        <p style="font-size:13px;color:rgba(255,255,255,.7);font-style:italic;line-height:1.8;margin-bottom:14px;">
+          Installa l'app sul tuo telefono per accedere con un tocco — senza cercare il link ogni volta.
+        </p>
+        <div id="pwa-install-btn-wrap">
+          <button class="btn btn-gold" id="pwa-install-btn" onclick="installPWA()" style="display:none;">
+            📲 Installa l'app
+          </button>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border-radius:var(--rs);padding:12px;margin-top:8px;">
+          <div style="color:rgba(255,255,255,.9);font-size:13px;margin-bottom:8px;"><strong>iPhone / iPad (Safari):</strong></div>
+          <div style="color:rgba(255,255,255,.7);font-size:12px;line-height:1.8;">
+            1. Tocca il tasto <strong style="color:var(--gold);">⬆️ Condividi</strong> in basso<br>
+            2. Scorri e tocca <strong style="color:var(--gold);">"Aggiungi alla schermata Home"</strong><br>
+            3. Tocca <strong style="color:var(--gold);">"Aggiungi"</strong> in alto a destra
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border-radius:var(--rs);padding:12px;margin-top:8px;">
+          <div style="color:rgba(255,255,255,.9);font-size:13px;margin-bottom:8px;"><strong>Android (Chrome):</strong></div>
+          <div style="color:rgba(255,255,255,.7);font-size:12px;line-height:1.8;">
+            1. Tocca i <strong style="color:var(--gold);">⋮ tre puntini</strong> in alto a destra<br>
+            2. Tocca <strong style="color:var(--gold);">"Aggiungi a schermata Home"</strong><br>
+            3. Conferma con <strong style="color:var(--gold);">"Aggiungi"</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="text-align:center;">
+        <button onclick="logoutCliente()" class="btn btn-ghost">🚪 Cambia account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Estrai e salva _clienteDbUrl PRIMA che il modulo Firebase si carichi
+// Così funziona anche se il barista non è loggato
+(function() {
+  const p = new URLSearchParams(window.location.search);
+  const cp = p.get('c');
+  if (cp) {
+    try {
+      const d = JSON.parse(atob(cp));
+      if (d.u && d.u.startsWith('https://')) {
+        window._clienteDbUrl = d.u;
+        localStorage.setItem('cf_cl_db', d.u);
+      }
+    } catch(e) {}
+  }
+  // Carica anche da localStorage
+  if (!window._clienteDbUrl) {
+    const saved = localStorage.getItem('cf_cl_db');
+    if (saved) window._clienteDbUrl = saved;
+  }
+})();
+</script>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  sendPasswordResetEmail, signOut, onAuthStateChanged
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+// ── Config Firebase — apiKey da localStorage, mai nel codice ──
+const _stored = JSON.parse(localStorage.getItem('fb_cfg') || 'null');
+if (!_stored || !_stored.apiKey) {
+  // Controlla se è un cliente che arriva da QR — non ha bisogno di Firebase
+  const _p = new URLSearchParams(window.location.search);
+  const _tok = _p.get('t');
+  const _cp  = _p.get('c');
+  const _clDb = localStorage.getItem('cf_cl_db');
+  if (_tok || _cp || _clDb) {
+    // È un cliente — vai a view-cl senza Firebase Auth
+    document.getElementById('view-splash').classList.remove('active');
+    document.getElementById('view-cl').classList.add('active');
+    window._isClienteOnly = true;
+    window._needFbConfig = true;
+    throw new Error('firebase-config-needed');
+  }
+  // È il barista senza config — mostra setup
+  document.getElementById('view-splash').classList.remove('active');
+  document.getElementById('view-fb-setup').classList.add('active');
+  window._needFbConfig = true;
+  throw new Error('firebase-config-needed');
+}
+const firebaseConfig = {
+  apiKey: _stored.apiKey,
+  authDomain: "bar-tessera-fedelta.firebaseapp.com",
+  databaseURL: "https://bar-tessera-fedelta-default-rtdb.firebaseio.com",
+  projectId: "bar-tessera-fedelta",
+  storageBucket: "bar-tessera-fedelta.firebasestorage.app",
+  messagingSenderId: "726579087537",
+  appId: "1:726579087537:web:1af0eb4a07bb18e51aba90"
+};
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// ── Esponi auth e funzioni al window (il resto del codice è non-module) ──
+window._fbAuth = auth;
+window._fbSignIn    = (e,p) => signInWithEmailAndPassword(auth, e, p);
+window._fbRegister  = (e,p) => createUserWithEmailAndPassword(auth, e, p);
+window._fbReset     = (e)   => sendPasswordResetEmail(auth, e);
+window._fbSignOut   = ()    => signOut(auth);
+
+// ── Listener stato autenticazione ────────────────
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    // Barista autenticato
+    window._currentUser = user;
+    window._barId = user.uid;
+    window._dbUrl = firebaseConfig.databaseURL + '/bars/' + user.uid;
+    // Carica nome bar e mostra view-mode
+    window.onBaristaAuth(user);
+  } else {
+    window._currentUser = null;
+    window._barId = null;
+    window._dbUrl = null;
+    // Controlla se cliente locale
+    window.onBaristaLogout();
+  }
+});
+</script>
+
+<script>
+// ══════════════════════════════════════════════════
+// CONSTANTS & STATE
+// ══════════════════════════════════════════════════
+const QR_TTL  = 30;
+const POLL_MS = 2000;
+const OM      = 10;
+const AVATARS = ['😊','😎','🧔','👩','👨','🧑','👴','👵','🐱','🐶','🦊','🐼'];
+
+let qrTimer=null, qrSecs=QR_TTL, qrInst=null, curToken='';
+let bPollTimer=null, cPollTimer=null;
+let aDrink='caffe', aQty=1;
+let curCId=null, pendingToken=null;
+let pinBuf='', clPinBuf='', clPinTarget=null;
+
+// ══════════════════════════════════════════════════
+// DATABASE HELPERS (Firebase REST)
+// ══════════════════════════════════════════════════
+async function getAuthToken() {
+  try {
+    if (window._fbAuth && window._fbAuth.currentUser) {
+      return await window._fbAuth.currentUser.getIdToken();
+    }
+  } catch(e){}
+  return null;
+}
+
+async function dbGet(path) {
+  if (!window._dbUrl) throw new Error('Non autenticato');
+  const token = await getAuthToken();
+  const url = window._dbUrl + (path||'') + '.json' + (token ? '?auth='+token : '');
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('DB GET ' + r.status);
+  const d = await r.json();
+  return d;
+}
+
+async function dbSet(path, data) {
+  if (!window._dbUrl) throw new Error('Non autenticato');
+  const token = await getAuthToken();
+  const url = window._dbUrl + (path||'') + '.json' + (token ? '?auth='+token : '');
+  const r = await fetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  if (!r.ok) { const t=await r.text(); throw new Error('DB SET ' + r.status + ': ' + t.slice(0,100)); }
+  return data;
+}
+
+async function dbPatch(path, data) {
+  if (!window._dbUrl) throw new Error('Non autenticato');
+  const token = await getAuthToken();
+  const url = window._dbUrl + (path||'') + '.json' + (token ? '?auth='+token : '');
+  const r = await fetch(url, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  if (!r.ok) throw new Error('DB PATCH ' + r.status);
+  return data;
+}
+
+// Legge il bin completo normalizzando gli array
+async function binGet() {
+  const d = await dbGet('');
+  if (!d) return {token:'',tokenTs:0,request:null,lastApproval:null,riscattoReq:null,riscattoApproval:null,clienti:{},stats:{caffe:0,cap:0,omaggi:0,storia:[]}};
+  if (!d.stats) d.stats={caffe:0,cap:0,omaggi:0,storia:[]};
+  if (!Array.isArray(d.stats.storia)) d.stats.storia=[];
+  if (!d.clienti) d.clienti={};
+  Object.values(d.clienti).forEach(c=>{
+    if(!Array.isArray(c.storia))c.storia=[];
+    if(!Array.isArray(c.notifiche))c.notifiche=[];
+  });
+  return d;
+}
+
+async function binPut(data) {
+  return dbSet('', data);
+}
+
+// ══════════════════════════════════════════════════
+// AUTH CALLBACKS (chiamate dal modulo Firebase)
+// ══════════════════════════════════════════════════
+window.onBaristaAuth = async function(user) {
+  const p = new URLSearchParams(window.location.search);
+  const tok = p.get('t');
+  const cp  = p.get('c');
+
+  if (cp) {
+    try {
+      const d = JSON.parse(atob(cp));
+      if (d.u && d.u.startsWith('https://')) {
+        window._clienteDbUrl = d.u;
+        localStorage.setItem('cf_cl_db', d.u);
+      }
+    } catch(e){}
+  }
+
+  // Carica info bar (nome + lista locali)
+  dbGet('/info').then(info => {
+    const nomebar = (info && info.nomebar) || user.email || 'Il tuo bar';
+    document.getElementById('mode-nomebar').textContent = nomebar;
+    // Popola lista locali multi-sede
+    aggiornaListaLocaliMode(user, info);
+  }).catch(() => {
+    document.getElementById('mode-nomebar').textContent = user.email || 'Il tuo bar';
+  });
+
+  // Init nodo DB se non esiste
+  dbGet('').then(async data => {
+    if (!data || !data.stats) {
+      await dbSet('', {
+        info: { email: user.email, nomebar: '', creato: Date.now() },
+        token:'', tokenTs:0, request:null, lastApproval:null,
+        riscattoReq:null, riscattoApproval:null,
+        clienti:{}, stats:{caffe:0,cap:0,omaggi:0,storia:[]}
+      });
+    }
+  }).catch(e => console.warn('DB init:', e.message));
+
+  showView('view-mode');
+};
+
+// Popola la lista sedi nella view-mode
+function aggiornaListaLocaliMode(user, info) {
+  const locali = (info && info.locali) || null;
+  const box = document.getElementById('mode-locali-box');
+  const list = document.getElementById('mode-locali-list');
+  if (!locali || Object.keys(locali).length <= 0) {
+    if (box) box.style.display = 'none';
+    return;
+  }
+  if (box) box.style.display = 'block';
+  const entries = Object.entries(locali);
+  list.innerHTML = entries.map(([lid, loc]) => {
+    const attivo = window._localeAttivo === lid;
+    return `<button onclick="selezionaLocale('${lid}')" style="width:100%;padding:12px 14px;border-radius:var(--rs);border:${attivo ? '2px solid var(--gold)' : '1px solid var(--latte)'};background:${attivo ? '#fffdf0' : 'white'};font-family:'Georgia',serif;font-size:14px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:20px;">🏠</span>
+      <div style="flex:1;">
+        <div style="color:var(--espresso);">${loc.nome||lid}</div>
+        <div style="font-size:11px;color:var(--muted);font-style:italic;">${attivo ? '✅ Selezionato' : 'Tocca per selezionare'}</div>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+function selezionaLocale(lid) {
+  window._localeAttivo = lid;
+  // Aggiorna badge nome
+  dbGet('/info').then(info => {
+    const loc = info && info.locali && info.locali[lid];
+    const nome = (loc && loc.nome) || 'Locale';
+    document.getElementById('mode-nomebar').textContent = nome;
+    aggiornaListaLocaliMode(window._currentUser, info);
+    showToast('✅ Selezionato: ' + nome);
+  }).catch(() => {});
+}
+
+function mostraFormNuovoLocale() {
+  document.getElementById('mode-nuovo-locale-form').style.display = 'block';
+  document.getElementById('nuovo-locale-nome').focus();
+}
+
+async function creaLocale() {
+  const nome = document.getElementById('nuovo-locale-nome').value.trim();
+  const pin  = document.getElementById('nuovo-locale-pin').value.trim();
+  if (!nome) { showToast('Inserisci il nome del locale'); return; }
+  if (!pin || pin.length < 4) { showToast('Inserisci un PIN di 4 cifre'); return; }
+  try {
+    const info = (await dbGet('/info')) || {};
+    if (!info.locali) info.locali = {};
+    const lid = 'loc' + Date.now().toString(36);
+    info.locali[lid] = { nome, pin, creato: Date.now() };
+    await dbPatch('/info', { locali: info.locali });
+    document.getElementById('mode-nuovo-locale-form').style.display = 'none';
+    document.getElementById('nuovo-locale-nome').value = '';
+    document.getElementById('nuovo-locale-pin').value = '';
+    showToast('✅ Locale "' + nome + '" creato!');
+    aggiornaListaLocaliMode(window._currentUser, info);
+    const box = document.getElementById('mode-locali-box');
+    if (box) box.style.display = 'block';
+  } catch(e) { showToast('❌ Errore: ' + e.message); }
+}
+
+window.onBaristaLogout = function() {
+  // Controlla parametri URL per cliente
+  const p = new URLSearchParams(window.location.search);
+  const tok = p.get('t');
+  const cp  = p.get('c');
+  const idp = p.get('id');
+  // Se già in view-cl (cliente senza Firebase), non fare nulla
+  if (window._isClienteOnly) return;
+
+  if (tok && cp) {
+    // Decodifica database URL del bar dal QR
+    try {
+      const d = JSON.parse(atob(cp));
+      if (d.u && d.u.startsWith('https://')) {
+        window._clienteDbUrl = d.u;
+        localStorage.setItem('cf_cl_db', d.u);
+      }
+    } catch(e){}
+    showView('view-cl');
+    if (window._clienteDbUrl) {
+      initLanding(tok);
+    } else {
+      showClSub('cl-accedi');
+    }
+    return;
+  }
+
+  if (cp && idp && window._clienteDbUrl) {
+    showView('view-cl');
+    showClSub('cl-loading');
+    clBinGet().then(bin=>{
+      const c=bin.clienti&&bin.clienti[idp];
+      if(c){curCId=idp;localStorage.setItem('cf_id',idp);renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+      else showClSub('cl-accedi');
+    }).catch(()=>showClSub('cl-accedi'));
+    return;
+  }
+
+  // Accesso diretto senza parametri — mostra auth barista o cliente
+  const savedDb = localStorage.getItem('cf_cl_db');
+  if (savedDb) window._clienteDbUrl = savedDb;
+
+  const sid = localStorage.getItem('cf_id');
+  if (sid && window._clienteDbUrl) {
+    // Prova a caricare tessera cliente salvata
+    showView('view-cl');
+    showClSub('cl-loading');
+    clBinGet().then(bin=>{
+      const c=bin.clienti&&bin.clienti[sid];
+      if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+      else showClSub('cl-accedi');
+    }).catch(()=>showClSub('cl-accedi'));
+    return;
+  }
+
+  // Nessuna sessione — mostra home pubblica clienti
+  showView('view-home-cliente');
+  // Prova a mostrare il nome bar salvato (se disponibile)
+  if (window._clienteDbUrl) {
+    const savedName = localStorage.getItem('cf_nomebar');
+    if (savedName) {
+      const el = document.getElementById('home-cl-nomebar');
+      if (el) el.textContent = savedName;
+    }
+    caricaListaLocali();
+  }
+};
+
+// ══════════════════════════════════════════════════
+// AUTH — Barista
+// ══════════════════════════════════════════════════
+function showPanel(id) {
+  ['auth-login-panel','auth-reg-panel','auth-reset-panel'].forEach(p=>{
+    document.getElementById(p).style.display = p===id?'block':'none';
+  });
+}
+
+async function doLogin() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pwd   = document.getElementById('auth-pwd').value;
+  const err   = document.getElementById('auth-err');
+  err.style.display='none';
+  if (!email||!pwd) { err.textContent='Compila tutti i campi.'; err.style.display='block'; return; }
+  const btn = document.getElementById('auth-login-btn');
+  btn.disabled=true; btn.textContent='⏳ Accesso...';
+  try {
+    await window._fbSignIn(email, pwd);
+    // onAuthStateChanged gestisce il redirect
+  } catch(e) {
+    const msgs = {
+      'auth/user-not-found': 'Email non registrata.',
+      'auth/wrong-password': 'Password errata.',
+      'auth/invalid-email': 'Email non valida.',
+      'auth/invalid-credential': 'Email o password errati.',
+      'auth/too-many-requests': 'Troppi tentativi. Riprova tra qualche minuto.'
+    };
+    err.textContent = msgs[e.code] || ('Errore: ' + e.message);
+    err.style.display='block';
+  }
+  btn.disabled=false; btn.textContent='🔑 Accedi';
+}
+
+async function doRegister() {
+  const nomebar = document.getElementById('reg-nomebar').value.trim();
+  const email   = document.getElementById('reg-email').value.trim();
+  const pwd     = document.getElementById('reg-pwd').value;
+  const err     = document.getElementById('reg-err');
+  err.style.display='none';
+  if (!nomebar||!email||!pwd) { err.textContent='Compila tutti i campi.'; err.style.display='block'; return; }
+  if (pwd.length<6) { err.textContent='Password minimo 6 caratteri.'; err.style.display='block'; return; }
+  const btn = document.getElementById('auth-reg-btn');
+  btn.disabled=true; btn.textContent='⏳ Registrazione...';
+  try {
+    const cred = await window._fbRegister(email, pwd);
+    // Salva nome bar nel database (onBaristaAuth creerà la struttura)
+    // Aggiorniamo il nome dopo che onBaristaAuth ha creato il nodo
+    setTimeout(async()=>{
+      try { await dbPatch('/info', {nomebar}); } catch(e){}
+      document.getElementById('mode-nomebar').textContent = nomebar;
+    }, 1500);
+  } catch(e) {
+    const msgs = {
+      'auth/email-already-in-use': 'Email già registrata. Prova ad accedere.',
+      'auth/invalid-email': 'Email non valida.',
+      'auth/weak-password': 'Password troppo debole (min. 6 caratteri).'
+    };
+    err.textContent = msgs[e.code] || ('Errore: ' + e.message);
+    err.style.display='block';
+    btn.disabled=false; btn.textContent='☕ Crea account';
+  }
+}
+
+async function doReset() {
+  const email = document.getElementById('reset-email').value.trim();
+  const msg   = document.getElementById('reset-msg');
+  const btn   = document.getElementById('auth-reset-btn');
+  msg.style.display='none';
+  if (!email) { msg.textContent='Inserisci la tua email.'; msg.style.color='var(--danger)'; msg.style.display='block'; return; }
+  btn.disabled=true; btn.textContent='⏳ Invio...';
+  try {
+    await window._fbReset(email);
+    msg.textContent='✅ Email inviata! Controlla la tua casella (anche spam).';
+    msg.style.color='var(--success)';
+    msg.style.display='block';
+  } catch(e) {
+    msg.textContent='Errore: email non trovata o non valida.';
+    msg.style.color='var(--danger)';
+    msg.style.display='block';
+  }
+  btn.disabled=false; btn.textContent='📧 Invia link reset';
+}
+
+async function doLogout() {
+  stopQRCycle(); stopBPoll();
+  await window._fbSignOut();
+  // onAuthStateChanged → onBaristaLogout
+}
+
+// ══════════════════════════════════════════════════
+// VIEWS
+// ══════════════════════════════════════════════════
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════
+// BARISTA — Accesso
+// ══════════════════════════════════════════════════
+function enterBarista() {
+  showView('view-barista');
+  bTab('qr');
+  initBarista();
+}
+
+// ══════════════════════════════════════════════════
+// BARISTA — QR
+// ══════════════════════════════════════════════════
+function initBarista() {
+  updBStats();
+  startQRCycle();
+  startBPoll();
+}
+
+function genTok() {
+  return 'CF'+Math.random().toString(36).slice(2,7).toUpperCase()+Date.now().toString(36).slice(-4).toUpperCase();
+}
+
+function stopQRCycle() { if(qrTimer){clearInterval(qrTimer);qrTimer=null;} }
+function stopBPoll()   { if(bPollTimer){clearInterval(bPollTimer);bPollTimer=null;} }
+
+async function startQRCycle() {
+  stopQRCycle();
+  await pushTok();
+  qrSecs=QR_TTL;
+  qrTimer=setInterval(async()=>{
+    qrSecs--;
+    const p=Math.round((qrSecs/QR_TTL)*100);
+    document.getElementById('qfill').style.width=p+'%';
+    document.getElementById('qcd').textContent=qrSecs;
+    if(qrSecs<=0){await pushTok();qrSecs=QR_TTL;}
+  },1000);
+}
+
+async function pushTok() {
+  curToken=genTok();
+  try {
+    const bin=await binGet();
+    bin.token=curToken; bin.tokenTs=Date.now(); bin.request=null;
+    await binPut(bin);
+  } catch(e){setConn(false);}
+  renderQR(curToken);
+  setConn(true);
+  document.getElementById('approv-cons').classList.remove('show');
+  document.getElementById('approv-riscatto').classList.remove('show');
+}
+
+async function forceQR() {
+  qrSecs=QR_TTL;
+  document.getElementById('qfill').style.width='100%';
+  document.getElementById('qcd').textContent=QR_TTL;
+  await pushTok();
+}
+
+function renderQR(token) {
+  // window._dbUrl = "https://...firebaseio.com/bars/UID" — path completo del bar
+  if (!window._dbUrl) { console.error('_dbUrl non impostato'); return; }
+  const barDbUrl = window._dbUrl; // già corretto
+  const payload = btoa(JSON.stringify({u: barDbUrl}));
+  const url = window.location.href.split('?')[0] + '?t=' + token + '&c=' + payload;
+  document.getElementById('qtok').textContent = token;
+  const d = document.getElementById('qrcode-barista');
+  d.innerHTML=''; qrInst=null;
+  try {
+    qrInst=new QRCode(d,{text:url,width:200,height:200,colorDark:'#2C1810',colorLight:'#FFFFFF',correctLevel:QRCode.CorrectLevel.M});
+  } catch(e){
+    d.innerHTML='<p style="padding:20px;font-size:13px;color:var(--muted);font-style:italic;">'+token+'</p>';
+  }
+}
+
+function setConn(ok) {
+  document.getElementById('cdot').className='status-dot '+(ok?'green':'red');
+  document.getElementById('clbl').textContent=ok?'connesso':'errore';
+}
+
+// ══════════════════════════════════════════════════
+// BARISTA — Polling richiesta cliente
+// ══════════════════════════════════════════════════
+function startBPoll() {
+  stopBPoll();
+  bPollTimer=setInterval(async()=>{
+    try {
+      const bin=await binGet(); setConn(true);
+      // Richiesta consumazione
+      // Mostra pannello per qualsiasi richiesta recente (ultimi 3 minuti)
+      // Non solo quella col token corrente — il cliente potrebbe impiegare tempo a registrarsi
+      if(bin.request && bin.request.clienteId && (Date.now()-(bin.request.ts||0))<180000) {
+        const c=bin.clienti&&bin.request.clienteId?bin.clienti[bin.request.clienteId]:null;
+        const idStr=c&&c.numId?String(c.numId).padStart(4,'0'):'';
+        const nc=c?((c.nome||'')+' '+(c.cognome||'')).trim():'Cliente';
+        document.getElementById('approv-who').textContent=
+          (idStr?idStr+' — ':'')+nc+(c?' · ☕'+Math.max(0,OM-(c.puntiC||0))+' mancano':'');
+        document.getElementById('approv-cons').classList.add('show');
+        bTab('qr');
+      }
+      // Richiesta riscatto
+      if(bin.riscattoReq && bin.riscattoReq.clienteId && (Date.now()-(bin.riscattoReq.ts||0))<180000) {
+        const c=bin.clienti&&bin.riscattoReq.clienteId?bin.clienti[bin.riscattoReq.clienteId]:null;
+        const idStr=c&&c.numId?String(c.numId).padStart(4,'0'):'';
+        const nc=c?((c.nome||'')+' '+(c.cognome||'')).trim():'Cliente';
+        const tipo=bin.riscattoReq.tipo||'caffè';
+        document.getElementById('riscatto-who').textContent=
+          (idStr?idStr+' — ':'')+nc+' vuole riscattare un '+tipo+' gratuito';
+        document.getElementById('approv-riscatto').classList.add('show');
+        bTab('qr');
+      }
+      // Alert omaggi
+      checkOmaggiAlert(bin);
+    } catch(e){setConn(false);}
+  },POLL_MS);
+}
+
+function checkOmaggiAlert(bin) {
+  const clienti=Object.values(bin.clienti||{});
+  const pronti=clienti.filter(c=>(c.puntiC||0)>=OM||(c.puntiK||0)>=OM);
+  const alertEl=document.getElementById('b-omaggi-alert');
+  if(pronti.length){
+    alertEl.style.display='block';
+    let html='';
+    pronti.forEach(c=>{
+      const id=c.numId?String(c.numId).padStart(4,'0'):'';
+      const nc=((c.nome||'')+' '+(c.cognome||'')).trim();
+      
+      if((c.puntiC||0)>=OM){
+        html += `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid rgba(212,168,83,.3);">
+            <span style="font-size:13px;"><b>${id ? id + ' — ' : ''}${nc}</b> · ☕ caffè</span>
+            <button onclick="approvaRiscattoManuale('${c.id}','caffe')" style="background:var(--gold);border:none;color:white;padding:5px 10px;border-radius:var(--rs);font-family:Georgia,serif;font-size:12px;cursor:pointer;">🎁 Riscatta</button>
+          </div>`;
+      }
+      if((c.puntiK||0)>=OM){
+        html += `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid rgba(212,168,83,.3);">
+            <span style="font-size:13px;"><b>${id ? id + ' — ' : ''}${nc}</b> · 🥛 cappuccino</span>
+            <button onclick="approvaRiscattoManuale('${c.id}','cappuccino')" style="background:var(--gold);border:none;color:white;padding:5px 10px;border-radius:var(--rs);font-family:Georgia,serif;font-size:12px;cursor:pointer;">🎁 Riscatta</button>
+          </div>`;
+      }
+    });
+    document.getElementById('b-omaggi-nomi').innerHTML=html;
+  } else {
+    alertEl.style.display='none';
+  }
+}
+
+// ══════════════════════════════════════════════════
+// BARISTA — Approva/Rifiuta
+// ══════════════════════════════════════════════════
+function selAD(t){
+  aDrink=t;
+  document.getElementById('ao-c').classList.toggle('sel',t==='caffe');
+  document.getElementById('ao-c').classList.remove('cap');
+  document.getElementById('ao-k').classList.toggle('sel',t==='cappuccino');
+  document.getElementById('ao-k').classList.toggle('cap',t==='cappuccino');
+  updateALbl();
+}
+function chgQty(d){aQty=Math.max(1,Math.min(5,aQty+d));document.getElementById('a-qty').textContent=aQty;updateALbl();}
+function updateALbl(){
+  const n=aDrink==='caffe'?'caffè':'cappuccin'+(aQty===1?'o':'i');
+  document.getElementById('a-lbl').textContent=aQty+' '+n;
+}
+
+async function approvaConsumo(){
+  try {
+    const bin=await binGet();
+    const req=bin.request;
+    if(!req||!req.clienteId){showToast('⚠️ Nessuna richiesta attiva');document.getElementById('approv-cons').classList.remove('show');return;}
+    const cid=req.clienteId;
+    if(cid&&bin.clienti[cid]){
+      const c=bin.clienti[cid];
+      if(!Array.isArray(c.storia))c.storia=[];
+      if(!Array.isArray(c.notifiche))c.notifiche=[];
+      for(let i=0;i<aQty;i++){
+        if(aDrink==='caffe'){c.puntiC=(c.puntiC||0)+1;c.totC=(c.totC||0)+1;}
+        else{c.puntiK=(c.puntiK||0)+1;c.totK=(c.totK||0)+1;}
+        c.storia.unshift({tipo:aDrink,ts:Date.now()});
+      }
+      pushNotif(c,'info','Il barista ha aggiunto '+aQty+' '+(aDrink==='caffe'?'caffè':'cappuccino')+'.');
+    }
+    bin.lastApproval={cid,tipo:aDrink,qty:aQty,ts:Date.now(),denied:false};
+    bin.request=null;
+    if(!Array.isArray(bin.stats.storia))bin.stats.storia=[];
+    if(aDrink==='caffe')bin.stats.caffe=(bin.stats.caffe||0)+aQty;
+    else bin.stats.cap=(bin.stats.cap||0)+aQty;
+    for(let i=0;i<aQty;i++)bin.stats.storia.unshift({tipo:aDrink,ts:Date.now()});
+    await binPut(bin);
+    document.getElementById('approv-cons').classList.remove('show');
+    showToast('✅ '+aQty+' '+(aDrink==='caffe'?'caffè':'cappuccino')+' approvato!');
+    updBStats();
+    setTimeout(()=>forceQR(),8000);
+  } catch(e){showToast('❌ Errore: '+e.message);}
+}
+
+async function rifiutaConsumo(){
+  try {
+    const bin=await binGet();
+    const cid=bin.request&&bin.request.clienteId;
+    bin.lastApproval={cid:cid||null,denied:true,ts:Date.now()};
+    bin.request=null;
+    await binPut(bin);
+    document.getElementById('approv-cons').classList.remove('show');
+    setTimeout(()=>forceQR(),8000);
+  } catch(e){}
+}
+
+async function approvaRiscattoManuale(cid, tipo){
+  if(!confirm('Approvare omaggio '+tipo+' per questo cliente?'))return;
+  try{
+    const bin=await binGet();
+    if(!bin.clienti[cid])return;
+    const c=bin.clienti[cid];
+    if(!Array.isArray(c.storia))c.storia=[];
+    if(!Array.isArray(c.notifiche))c.notifiche=[];
+    if(tipo==='caffe')c.puntiC=0;else c.puntiK=0;
+    c.totOmaggi=(c.totOmaggi||0)+1;
+    c.storia.unshift({tipo:'omaggio-'+tipo,ts:Date.now()});
+    if(!Array.isArray(bin.stats.storia))bin.stats.storia=[];
+    bin.stats.omaggi=(bin.stats.omaggi||0)+1;
+    bin.stats.storia.unshift({tipo:'omaggio-'+tipo,ts:Date.now()});
+    pushNotif(c,'gold','🎁 Il barista ha approvato il tuo omaggio '+tipo+'! Buona consumazione.');
+    // Segnale al cliente
+    bin.riscattoApproval={cid,ts:Date.now(),denied:false,tipo};
+    await binPut(bin);
+    showToast('🎁 Omaggio '+tipo+' approvato per '+((c.nome||'')+' '+(c.cognome||'')).trim()+'!');
+    updBStats();
+  }catch(e){showToast('❌ Errore: '+e.message);}
+}
+
+async function approvaRiscatto(){
+  try {
+    const bin=await binGet();
+    const req=bin.riscattoReq;
+    if(!req){document.getElementById('approv-riscatto').classList.remove('show');return;}
+    const cid=req.clienteId;
+    const tipo=req.tipo||'caffe';
+    if(cid&&bin.clienti[cid]){
+      const c=bin.clienti[cid];
+      if(!Array.isArray(c.storia))c.storia=[];
+      if(!Array.isArray(c.notifiche))c.notifiche=[];
+      if(tipo==='caffe')c.puntiC=0;else c.puntiK=0;
+      c.totOmaggi=(c.totOmaggi||0)+1;
+      c.storia.unshift({tipo:'omaggio-'+tipo,ts:Date.now()});
+      bin.stats.omaggi=(bin.stats.omaggi||0)+1;
+      if(!Array.isArray(bin.stats.storia))bin.stats.storia=[];
+      bin.stats.storia.unshift({tipo:'omaggio-'+tipo,ts:Date.now()});
+      pushNotif(c,'gold','🎁 Il barista ha approvato il tuo omaggio! Buona consumazione.');
+    }
+    bin.riscattoApproval={cid,ts:Date.now(),denied:false};
+    bin.riscattoReq=null;
+    await binPut(bin);
+    document.getElementById('approv-riscatto').classList.remove('show');
+    showToast('🎁 Omaggio approvato!');
+    updBStats();
+  } catch(e){showToast('❌ Errore: '+e.message);}
+}
+
+async function rifiutaRiscatto(){
+  try {
+    const bin=await binGet();
+    const cid=bin.riscattoReq&&bin.riscattoReq.clienteId;
+    bin.riscattoApproval={cid:cid||null,denied:true,ts:Date.now()};
+    bin.riscattoReq=null;
+    await binPut(bin);
+    document.getElementById('approv-riscatto').classList.remove('show');
+  } catch(e){}
+}
+
+function pushNotif(c,tipo,msg){
+  if(!Array.isArray(c.notifiche))c.notifiche=[];
+  c.notifiche.unshift({tipo,msg,ts:Date.now(),letta:false});
+  if(c.notifiche.length>50)c.notifiche=c.notifiche.slice(0,50);
+}
+
+// ══════════════════════════════════════════════════
+// BARISTA — Stats & Lista clienti
+// ══════════════════════════════════════════════════
+function renderClientiList(lista){
+  const cl=document.getElementById('clienti-list');
+  if(!lista||!lista.length){cl.innerHTML='<p class="empty">Nessun cliente trovato.</p>';return;}
+  cl.innerHTML=lista.map(c=>{
+    const pC=c.puntiC||0,pK=c.puntiK||0;
+    const hasOM=(pC>=OM)||(pK>=OM);
+    const unread=(c.notifiche||[]).filter(n=>!n.letta).length;
+    const idStr=c.numId?String(c.numId).padStart(4,'0'):'';
+    const nc=((c.nome||'')+' '+(c.cognome||'')).trim();
+    return '<div class="client-row" onclick="apriScheda(\''+c.id+'\')">'
+      +'<span class="cr-av">'+(c.avatar||'😊')+'</span>'
+      +'<div class="cr-info">'
+      +'<div class="cr-name">'+(idStr?'<span class="id-badge">'+idStr+'</span> ':'')+nc+(hasOM?'<span class="cr-alert-dot"></span>':'')+'</div>'
+      +'<div class="cr-sub">'+(c.email||'')+'</div>'
+      +'</div>'
+      +'<div class="cr-pts">'
+      +'<div class="cr-badge">☕'+pC+'/10 · 🥛'+pK+'/10</div>'
+      +'<div style="font-size:11px;color:var(--muted);font-style:italic;">🎁'+(c.totOmaggi||0)+(unread?' · 🔔'+unread:'')+'</div>'
+      +'</div></div>';
+  }).join('');
+}
+
+function filterClienti(q){
+  if(!window._tuttiClienti)return;
+  const s=(q||'').trim().toLowerCase();
+  if(!s){renderClientiList(window._tuttiClienti);return;}
+  renderClientiList(window._tuttiClienti.filter(c=>{
+    const id=c.numId?String(c.numId):'';
+    return id.includes(s)||(c.nome||'').toLowerCase().includes(s)
+      ||(c.cognome||'').toLowerCase().includes(s)||(c.email||'').toLowerCase().includes(s)
+      ||((c.nome||'')+' '+(c.cognome||'')).toLowerCase().includes(s);
+  }));
+}
+
+async function updBStats(){
+  try {
+    const bin=await binGet();
+    const s=bin.stats||{};
+    document.getElementById('bs-c').textContent=s.caffe||0;
+    document.getElementById('bs-k').textContent=s.cap||0;
+    document.getElementById('bs-o').textContent=s.omaggi||0;
+    const clienti=Object.values(bin.clienti||{});
+    document.getElementById('bs-u').textContent=clienti.length;
+    clienti.sort((a,b)=>(a.numId||9999)-(b.numId||9999));
+    window._tuttiClienti=clienti;
+    renderClientiList(clienti);
+    checkOmaggiAlert(bin);
+    const hist=(s.storia||[]).slice(0,20);
+    const list=document.getElementById('bs-hist');
+    if(!hist.length){list.innerHTML='<li class="empty">Nessuna operazione.</li>';}
+    else list.innerHTML=hist.map(h=>{
+      const ic=h.tipo==='cappuccino'?'🥛':(h.tipo||'').includes('omaggio')?'🎁':'☕';
+      const nm=h.tipo==='cappuccino'?'Cappuccino':(h.tipo||'').includes('omaggio')?'Omaggio':'Caffè';
+      const t=new Date(h.ts);
+      const tm=t.toLocaleDateString('it-IT',{day:'2-digit',month:'short'})+' '+t.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+      return '<li class="hist-item"><span class="hist-icon">'+ic+'</span><span class="hist-name">'+nm+'</span><span class="hist-time">'+tm+'</span></li>';
+    }).join('');
+  } catch(e){}
+}
+
+// ══════════════════════════════════════════════════
+// BARISTA — Aggiungi cliente manualmente
+// ══════════════════════════════════════════════════
+function apriAggiungiClienteManuale() {
+  // Svuota campi
+  ['mc-nome','mc-cognome','mc-email','mc-pin'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('mc-err').style.display = 'none';
+  document.getElementById('mc-ok').style.display = 'none';
+  document.getElementById('modal-add-cliente').style.display = 'block';
+}
+
+function chiudiModalCliente() {
+  document.getElementById('modal-add-cliente').style.display = 'none';
+}
+
+async function salvaClienteManuale() {
+  const nome    = document.getElementById('mc-nome').value.trim();
+  const cognome = document.getElementById('mc-cognome').value.trim();
+  const email   = document.getElementById('mc-email').value.trim().toLowerCase();
+  const pin     = document.getElementById('mc-pin').value.trim();
+  const err     = document.getElementById('mc-err');
+  const ok      = document.getElementById('mc-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+
+  if (!nome) { err.textContent = 'Inserisci il nome.'; err.style.display = 'block'; return; }
+  if (!email || !email.includes('@')) { err.textContent = 'Email non valida.'; err.style.display = 'block'; return; }
+  if (!pin || pin.length < 4 || !/^\d{4}$/.test(pin)) { err.textContent = 'PIN deve essere 4 cifre numeriche.'; err.style.display = 'block'; return; }
+
+  const btn = document.getElementById('mc-btn');
+  btn.disabled = true; btn.textContent = '⏳ Salvataggio...';
+  try {
+    const bin = await binGet();
+    const existing = Object.values(bin.clienti || {}).find(c => c.email === email);
+    if (existing) { err.textContent = 'Email già registrata (tessera ' + String(existing.numId||'').padStart(4,'0') + ').'; err.style.display = 'block'; btn.disabled = false; btn.textContent = '☕ Crea carta fedeltà'; return; }
+    const nums = Object.values(bin.clienti || {}).map(c => c.numId || 0);
+    const numId = (nums.length ? Math.max(...nums) : 0) + 1;
+    const id = 'c' + Date.now().toString(36);
+    const avatars = ['😊','😎','🧔','👩','👨','🧑'];
+    const av = avatars[Math.floor(Math.random() * avatars.length)];
+    bin.clienti = bin.clienti || {};
+    bin.clienti[id] = { id, numId, nome, cognome, email, pin, pinDaAggiornare: true, avatar: av,
+      puntiC:0, puntiK:0, totC:0, totK:0, totOmaggi:0, storia:[], notifiche:[], registrato: Date.now() };
+    await binPut(bin);
+    ok.textContent = '✅ Cliente ' + nome + ' aggiunto! Tessera n° ' + String(numId).padStart(4,'0') + ' · PIN: ' + pin;
+    ok.style.display = 'block';
+    ['mc-nome','mc-cognome','mc-email','mc-pin'].forEach(id2 => { const el = document.getElementById(id2); if (el) el.value = ''; });
+    updBStats();
+  } catch(e) { err.textContent = 'Errore: ' + e.message; err.style.display = 'block'; }
+  btn.disabled = false; btn.textContent = '☕ Crea carta fedeltà';
+}
+
+// ══════════════════════════════════════════════════
+// HOME CLIENTE — Lista locali (accesso senza QR)
+// ══════════════════════════════════════════════════
+async function caricaListaLocali() {
+  const listEl = document.getElementById('home-locali-list');
+  if (!listEl) return;
+  listEl.innerHTML = '<p class="empty" style="font-size:12px;">🔄 Caricamento...</p>';
+  // Cerca tutti i bar nel DB pubblico (struttura: bars/{uid}/info/nomebar)
+  // Se abbiamo già un _clienteDbUrl, estraiamo l'uid e mostriamo il bar
+  if (window._clienteDbUrl) {
+    try {
+      // Estrai la base URL e UID del bar corrente
+      const match = window._clienteDbUrl.match(/bars\/([^/]+)/);
+      if (match) {
+        const uid = match[1];
+        const baseUrl = window._clienteDbUrl.split('/bars/')[0];
+        // Leggi info del bar corrente
+        const infoUrl = baseUrl + '/bars/' + uid + '/info.json';
+        const r = await fetch(infoUrl);
+        if (r.ok) {
+          const info = await r.json();
+          const nomebar = (info && info.nomebar) || 'Il tuo bar';
+          // Salva nome per riferimento futuro
+          localStorage.setItem('cf_nomebar', nomebar);
+          const elNome = document.getElementById('home-cl-nomebar');
+          if (elNome) elNome.textContent = nomebar;
+          // Mostra locali aggiuntivi se presenti
+          const locali = info && info.locali;
+          if (locali && Object.keys(locali).length > 0) {
+            listEl.innerHTML = Object.entries(locali).map(([lid, loc]) =>
+              `<button onclick="collegaLocale('${window._clienteDbUrl}','${loc.nome||lid}')" style="width:100%;padding:10px 12px;border-radius:var(--rs);border:1px solid var(--latte);background:white;font-family:'Georgia',serif;font-size:13px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;">
+                <span>🏠</span><span style="color:var(--espresso);">${loc.nome||lid}</span>
+              </button>`
+            ).join('');
+          } else {
+            // Mostra il bar principale come unica opzione
+            listEl.innerHTML = `<button onclick="collegaLocale('${window._clienteDbUrl}','${nomebar}')" style="width:100%;padding:10px 12px;border-radius:var(--rs);border:1px solid var(--latte);background:white;font-family:'Georgia',serif;font-size:13px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;">
+              <span>🏠</span><span style="color:var(--espresso);">${nomebar}</span>
+            </button>`;
+          }
+          return;
+        }
+      }
+    } catch(e) {}
+  }
+  listEl.innerHTML = '<p class="empty" style="font-size:12px;">Scansiona il QR del barista per collegare un locale.</p>';
+}
+
+function collegaLocale(dbUrl, nomebar) {
+  window._clienteDbUrl = dbUrl;
+  localStorage.setItem('cf_cl_db', dbUrl);
+  localStorage.setItem('cf_nomebar', nomebar);
+  const el = document.getElementById('home-cl-nomebar');
+  if (el) el.textContent = nomebar;
+  showToast('✅ Collegato a: ' + nomebar);
+  accessoClienteEmail();
+}
+
+
+function bTab(t){
+  document.querySelectorAll('#view-barista .page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#view-barista .nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('bpage-'+t).classList.add('active');
+  document.getElementById('bnav-'+t).classList.add('active');
+  if(t==='stats'||t==='clienti')updBStats();
+}
+
+// ══════════════════════════════════════════════════
+// BARISTA — Scheda singolo cliente
+// ══════════════════════════════════════════════════
+async function apriScheda(cid){
+  showView('view-scheda');
+  document.getElementById('scheda-nav-name').textContent='⏳';
+  document.getElementById('scheda-body').innerHTML='<p class="empty" style="padding:30px;">Caricamento...</p>';
+  try {
+    const bin=await binGet();
+    const c=bin.clienti[cid];
+    if(!c){document.getElementById('scheda-body').innerHTML='<p class="empty">Cliente non trovato.</p>';return;}
+    const idStr=c.numId?String(c.numId).padStart(4,'0'):'—';
+    const nc=((c.nome||'')+' '+(c.cognome||'')).trim();
+    document.getElementById('scheda-nav-name').textContent=(c.avatar||'')+' '+nc;
+    document.getElementById('scheda-body').innerHTML=`
+      <div class="card" style="margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:11px;margin-bottom:11px;">
+          <span style="font-size:32px;">${c.avatar||'😊'}</span>
+          <div style="flex:1;"><div style="font-size:16px;color:var(--espresso);">${nc}</div><div style="font-size:12px;color:var(--muted);font-style:italic;">${c.email||''}</div></div>
+        </div>
+        <div style="text-align:center;background:var(--espresso);border-radius:var(--rs);padding:9px;">
+          <div style="font-size:10px;color:rgba(255,255,255,.6);font-style:italic;margin-bottom:3px;">Numero tessera</div>
+          <div class="id-big">${idStr}</div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Punti attuali</h2>
+        <div class="totals">
+          <div class="tot-item"><div class="tot-num">${c.puntiC||0}/10</div><div class="tot-label">☕ caffè ciclo</div></div>
+          <div class="tot-item"><div class="tot-num">${c.puntiK||0}/10</div><div class="tot-label">🥛 cappuccino ciclo</div></div>
+          <div class="tot-item"><div class="tot-num">${c.totC||0}</div><div class="tot-label">☕ caffè totali</div></div>
+          <div class="tot-item"><div class="tot-num">${c.totK||0}</div><div class="tot-label">🥛 cappuccino totali</div></div>
+          <div class="tot-item gold"><div class="tot-num">${c.totOmaggi||0}</div><div class="tot-label">🎁 omaggi totali</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Modifica manuale punti</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button class="btn btn-ghost" onclick="modPunti('${cid}','puntiC',1)">+1 ☕ caffè</button>
+          <button class="btn btn-ghost" onclick="modPunti('${cid}','puntiC',-1)">-1 ☕ caffè</button>
+          <button class="btn btn-ghost" onclick="modPunti('${cid}','puntiK',1)">+1 🥛 cappuccino</button>
+          <button class="btn btn-ghost" onclick="modPunti('${cid}','puntiK',-1)">-1 🥛 cappuccino</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Reset PIN cliente</h2>
+        <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px;">Imposta un nuovo PIN per il cliente.</p>
+        <div style="display:flex;gap:8px;">
+          <input class="inp" id="new-pin-${cid}" type="password" placeholder="Nuovo PIN (4 cifre)" maxlength="4" inputmode="numeric" style="margin-bottom:0;flex:1;">
+          <button class="btn btn-dark" style="width:auto;padding:11px 14px;" onclick="resetPinCliente('${cid}')">Imposta</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Storico</h2>
+        <ul class="hist-list">${renderHistItems(c.storia||[])}</ul>
+      </div>`;
+  } catch(e){document.getElementById('scheda-body').innerHTML='<p class="empty">Errore caricamento.</p>';}
+}
+
+function renderHistItems(storia){
+  if(!storia.length)return'<li class="empty">Nessuna consumazione.</li>';
+  return storia.slice(0,30).map(h=>{
+    const ic=(h.tipo||'').includes('cappuccino')?'🥛':(h.tipo||'').includes('omaggio')?'🎁':'☕';
+    const nm=(h.tipo||'').includes('cappuccino')?'Cappuccino':(h.tipo||'').includes('omaggio')?'Omaggio':'Caffè';
+    const t=new Date(h.ts);
+    const tm=t.toLocaleDateString('it-IT',{day:'2-digit',month:'short'})+' '+t.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    return '<li class="hist-item"><span class="hist-icon">'+ic+'</span><span class="hist-name">'+nm+'</span><span class="hist-time">'+tm+'</span></li>';
+  }).join('');
+}
+
+async function modPunti(cid,campo,delta){
+  try {
+    const bin=await binGet();
+    if(!bin.clienti[cid])return;
+    const c=bin.clienti[cid];
+    c[campo]=Math.max(0,Math.min(OM,(c[campo]||0)+delta));
+    await binPut(bin);
+    showToast('✅ Punti aggiornati');
+    apriScheda(cid);
+  } catch(e){showToast('❌ Errore: '+e.message);}
+}
+
+async function resetPinCliente(cid){
+  const inp=document.getElementById('new-pin-'+cid);
+  const pin=(inp?.value||'').trim();
+  if(!pin||pin.length<4){showToast('PIN deve essere 4 cifre');return;}
+  try {
+    const bin=await binGet();
+    if(!bin.clienti[cid])return;
+    bin.clienti[cid].pin=pin;
+    await binPut(bin);
+    showToast('✅ PIN aggiornato');
+    inp.value='';
+  } catch(e){showToast('❌ Errore: '+e.message);}
+}
+
+// ══════════════════════════════════════════════════
+// CLIENTE — Database helpers (usa _clienteDbUrl)
+// ══════════════════════════════════════════════════
+async function clBinGet(){
+  if(!window._clienteDbUrl){
+    throw new Error('Database non configurato. Scansiona il QR del barista.');
+  }
+  const url=window._clienteDbUrl.replace(/\/+$/,'')+'.json';
+  console.log('clBinGet URL:', url); // debug
+  const r=await fetch(url);
+  if(!r.ok){
+    const txt=await r.text();
+    throw new Error('DB '+r.status+': '+txt.slice(0,100));
+  }
+  const d=await r.json();
+  if(!d)return{token:'',tokenTs:0,request:null,lastApproval:null,clienti:{},stats:{caffe:0,cap:0,omaggi:0,storia:[]}};
+  if(!d.stats)d.stats={caffe:0,cap:0,omaggi:0,storia:[]};
+  if(!Array.isArray(d.stats.storia))d.stats.storia=[];
+  if(!d.clienti)d.clienti={};
+  Object.values(d.clienti).forEach(c=>{
+    if(!Array.isArray(c.storia))c.storia=[];
+    if(!Array.isArray(c.notifiche))c.notifiche=[];
+  });
+  return d;
+}
+
+async function clBinPut(data){
+  const url=(window._clienteDbUrl||'').replace(/\/+$/,'')+'.json';
+  const r=await fetch(url,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  if(!r.ok)throw new Error('DB '+r.status);
+  return data;
+}
+
+// ══════════════════════════════════════════════════
+// CLIENTE — Accesso senza QR
+// ══════════════════════════════════════════════════
+function accessoClienteEmail(){
+  showView('view-cl');
+  const savedDb=localStorage.getItem('cf_cl_db');
+  if(savedDb)window._clienteDbUrl=savedDb;
+  showClSub('cl-accedi');
+}
+
+async function accediConEmail(){
+  const email=document.getElementById('acc-email').value.trim().toLowerCase();
+  const err=document.getElementById('acc-err');
+  if(!email||!email.includes('@')){err.textContent='Inserisci una email valida.';err.style.display='block';return;}
+  err.style.display='none';
+  if(!window._clienteDbUrl){err.textContent='Scansiona prima il QR del barista per connettere il tuo bar.';err.style.display='block';return;}
+  const btn=document.getElementById('acc-btn');btn.disabled=true;btn.textContent='⏳...';
+  try {
+    const bin=await clBinGet();
+    const found=Object.values(bin.clienti||{}).find(c=>c.email===email);
+    if(!found){err.textContent='Email non trovata. Registrati scansionando il QR.';err.style.display='block';btn.disabled=false;btn.textContent='☕ Accedi alla mia carta';return;}
+    // Mostra PIN
+    clPinTarget=found;
+    document.getElementById('cl-pin-avatar').textContent=found.avatar||'😊';
+    document.getElementById('cl-pin-nome').textContent=((found.nome||'')+' '+(found.cognome||'')).trim();
+    clPinBuf='';updateClPinDots();
+    document.getElementById('cl-pin-err').textContent='';
+    showClSub('cl-pin');
+  } catch(e){err.textContent='Errore connessione.';err.style.display='block';}
+  btn.disabled=false;btn.textContent='☕ Accedi alla mia carta';
+}
+
+async function accediConId(){
+  const raw=(document.getElementById('acc-id')?.value||'').trim();
+  const err=document.getElementById('acc-err');
+  if(!raw||isNaN(raw)){err.textContent='Inserisci un numero tessera valido.';err.style.display='block';return;}
+  if(!window._clienteDbUrl){err.textContent='Scansiona prima il QR del barista per collegare il bar.';err.style.display='block';return;}
+  const num=parseInt(raw,10);
+  err.style.display='none';
+  const btn=document.getElementById('acc-id').nextElementSibling;
+  if(btn){btn.disabled=true;btn.textContent='⏳...';}
+  try {
+    const bin=await clBinGet();
+    const found=Object.values(bin.clienti||{}).find(c=>c.numId===num);
+    if(!found){err.textContent='Numero tessera non trovato. Controlla il numero o registrati scansionando il QR.';err.style.display='block';if(btn){btn.disabled=false;btn.textContent='🔢 Accedi con numero tessera';}return;}
+    // Mostra SEMPRE il PIN — obbligatorio
+    clPinTarget=found;
+    document.getElementById('cl-pin-avatar').textContent=found.avatar||'😊';
+    document.getElementById('cl-pin-nome').textContent=((found.nome||'')+' '+(found.cognome||'')).trim();
+    clPinBuf='';updateClPinDots();
+    document.getElementById('cl-pin-err').textContent='';
+    showClSub('cl-pin');
+  } catch(e){err.textContent='Errore connessione. Riprova.';err.style.display='block';}
+  if(btn){btn.disabled=false;btn.textContent='🔢 Accedi con numero tessera';}
+}
+
+// ══════════════════════════════════════════════════
+// CLIENTE — PIN
+// ══════════════════════════════════════════════════
+function updateClPinDots(){
+  for(let i=0;i<4;i++)document.getElementById('cp'+i).classList.toggle('filled',i<clPinBuf.length);
+}
+
+function clPinKey(k){
+  if(k==='del')clPinBuf=clPinBuf.slice(0,-1);
+  else if(k==='ok'){checkClPin();return;}
+  else if(clPinBuf.length<4)clPinBuf+=k;
+  updateClPinDots();
+  if(clPinBuf.length===4)setTimeout(checkClPin,150);
+}
+
+function checkClPin(){
+  if(!clPinTarget)return;
+  // Se il cliente non ha un PIN impostato (account vecchio), blocca l'accesso
+  if(!clPinTarget.pin){
+    document.getElementById('cl-pin-err').textContent='PIN non impostato. Chiedi al barista di impostarne uno dalla tua scheda.';
+    clPinBuf='';updateClPinDots();
+    return;
+  }
+  if(clPinBuf===clPinTarget.pin){
+    const _pinId=clPinTarget.id;
+    curCId=_pinId;
+    localStorage.setItem('cf_id',_pinId);
+    localStorage.setItem('cf_email',clPinTarget.email||'');
+    clPinTarget=null;clPinBuf='';
+    // Ricarica SEMPRE dati freschi dal database
+    showClSub('cl-loading');
+    clBinGet().then(bin=>{
+      const c=bin.clienti&&bin.clienti[_pinId];
+      if(c){renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+      else{showClSub('cl-accedi');}
+    }).catch(()=>{showClSub('cl-accedi');});
+  } else {
+    document.getElementById('cl-pin-err').textContent='PIN errato. Riprova.';
+    clPinBuf='';updateClPinDots();
+  }
+}
+
+// ══════════════════════════════════════════════════
+// CLIENTE — Registrazione
+// ══════════════════════════════════════════════════
+function showClSub(id){
+  ['cl-loading','cl-register','cl-waiting','cl-carta','cl-success','cl-deny','cl-accedi','cl-pin'].forEach(s=>{
+    const el=document.getElementById(s);if(el)el.style.display='none';
+  });
+  const el=document.getElementById(id);if(el)el.style.display='block';
+  // Aggiorna stato bar quando mostra schermata accesso
+  if(id==='cl-accedi'){
+    const hasDb=!!(window._clienteDbUrl||localStorage.getItem('cf_cl_db'));
+    if(hasDb&&!window._clienteDbUrl){
+      window._clienteDbUrl=localStorage.getItem('cf_cl_db');
+    }
+    const barOk=document.getElementById('cl-bar-status');
+    const barNo=document.getElementById('cl-nobar-status');
+    if(barOk)barOk.style.display=hasDb?'block':'none';
+    if(barNo)barNo.style.display=hasDb?'none':'block';
+  }
+}
+
+async function initLanding(token){
+  showView('view-cl');
+  showClSub('cl-loading');
+  pendingToken=token;
+  const savedEmail=localStorage.getItem('cf_email');
+  const savedId=localStorage.getItem('cf_id');
+  try {
+    const bin=await clBinGet();
+    const age=(Date.now()-(bin.tokenTs||0))/1000;
+    if(bin.token!==token||age>QR_TTL+5){
+      // QR scaduto — mostra PIN (non entrare direttamente)
+      if(savedId&&bin.clienti&&bin.clienti[savedId]){
+        const cScad=bin.clienti[savedId];
+        clPinTarget=cScad;
+        document.getElementById('cl-pin-avatar').textContent=cScad.avatar||'😊';
+        document.getElementById('cl-pin-nome').textContent=((cScad.nome||'')+' '+(cScad.cognome||'')).trim();
+        clPinBuf='';updateClPinDots();
+        document.getElementById('cl-pin-err').textContent='QR scaduto — inserisci il tuo PIN per continuare';
+        showClSub('cl-pin');
+      } else {
+        showRegistration(savedEmail||'');
+        showToast('QR scaduto — registrati comunque!');
+      }
+      return;
+    }
+    if(savedId&&bin.clienti&&bin.clienti[savedId]){
+      curCId=savedId;await sendRequest(bin,savedId);
+    } else if(savedEmail&&bin.clienti){
+      const found=Object.values(bin.clienti).find(c=>c.email===savedEmail);
+      if(found){curCId=found.id;localStorage.setItem('cf_id',found.id);await sendRequest(bin,found.id);}
+      else showRegistration(savedEmail);
+    } else {
+      showRegistration('');
+    }
+  } catch(e){
+    document.getElementById('cl-loading').innerHTML='<div style="font-size:44px;margin-bottom:12px;">❌</div><p style="font-size:14px;color:var(--danger);">Errore connessione.<br>Riprova.</p>';
+    showClSub('cl-loading');
+  }
+}
+
+function showRegistration(prefillEmail){
+  const grid=document.getElementById('r-avatars');grid.innerHTML='';
+  AVATARS.forEach((av,i)=>{
+    const b=document.createElement('button');b.className='av-btn';b.textContent=av;
+    b.onclick=()=>{document.querySelectorAll('.av-btn').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');};
+    if(i===0)b.classList.add('sel');
+    grid.appendChild(b);
+  });
+  if(prefillEmail)document.getElementById('r-email').value=prefillEmail;
+  showClSub('cl-register');
+}
+
+async function registerCliente(){
+  const nome=document.getElementById('r-nome').value.trim();
+  const cognome=(document.getElementById('r-cognome')?.value||'').trim();
+  const email=document.getElementById('r-email').value.trim().toLowerCase();
+  const pin=(document.getElementById('r-pin')?.value||'').trim();
+  const av=document.querySelector('.av-btn.sel')?.textContent||'😊';
+  const err=document.getElementById('r-err');
+  if(!nome){err.textContent='Inserisci il tuo nome.';err.style.display='block';return;}
+  if(!email||!email.includes('@')){err.textContent='Inserisci una email valida.';err.style.display='block';return;}
+  if(!pin||pin.length<4){err.textContent='Scegli un PIN di 4 cifre.';err.style.display='block';return;}
+  err.style.display='none';
+  const btn=document.getElementById('r-btn');btn.disabled=true;btn.textContent='⏳...';
+  try {
+    const bin=await clBinGet();
+    const existing=Object.values(bin.clienti||{}).find(c=>c.email===email);
+    if(existing){curCId=existing.id;localStorage.setItem('cf_id',existing.id);localStorage.setItem('cf_email',email);await sendRequest(bin,existing.id);return;}
+    const nums=Object.values(bin.clienti||{}).map(c=>c.numId||0);
+    const numId=(nums.length?Math.max(...nums):0)+1;
+    const id='c'+Date.now().toString(36);
+    const newC={id,numId,nome,cognome,email,pin,avatar:av,puntiC:0,puntiK:0,totC:0,totK:0,totOmaggi:0,storia:[],notifiche:[],registrato:Date.now()};
+    bin.clienti=bin.clienti||{};bin.clienti[id]=newC;
+    curCId=id;localStorage.setItem('cf_id',id);localStorage.setItem('cf_email',email);
+    await sendRequest(bin,id);
+  } catch(e){err.textContent='Errore: '+e.message;err.style.display='block';}
+  btn.disabled=false;btn.textContent='☕ Crea la mia carta fedeltà';
+}
+
+async function sendRequest(bin,clienteId){
+  bin.request={token:pendingToken,clienteId,ts:Date.now(),active:true};
+  bin.lastApproval=null;
+  await clBinPut(bin);
+  const c=bin.clienti[clienteId];
+  if(c){
+    const badge=document.getElementById('cl-user-badge-wait');
+    if(badge){
+      const idStr=c.numId?String(c.numId).padStart(4,'0'):'';
+      const nc=((c.nome||'')+' '+(c.cognome||'')).trim();
+      badge.innerHTML='<span class="uav">'+(c.avatar||'😊')+'</span><div><div class="uname">'+(idStr?'<span class="id-badge">'+idStr+'</span> ':'')+nc+'</div><div class="usub">'+(c.email||'')+'</div></div>';
+      badge.style.display='flex';
+    }
+  }
+  showClSub('cl-waiting');
+  startCPoll(clienteId);
+}
+
+// ══════════════════════════════════════════════════
+// CLIENTE — Polling approvazione
+// ══════════════════════════════════════════════════
+function startCPoll(cid){
+  if(cPollTimer){clearInterval(cPollTimer);cPollTimer=null;}
+  let secs=60;let active=true;
+  cPollTimer=setInterval(async()=>{
+    if(!active)return;
+    secs=Math.max(0,secs-2);
+    const wEl=document.getElementById('cl-wsecs');
+    const wBar=document.getElementById('cl-wbar');
+    if(wEl)wEl.textContent=secs;
+    if(wBar)wBar.style.width=Math.round((secs/60)*100)+'%';
+    if(secs<=0){
+      active=false;clearInterval(cPollTimer);cPollTimer=null;
+      const ld=document.getElementById('cl-loading');
+      if(ld)ld.innerHTML='<div style="font-size:44px;margin-bottom:12px;">⏱️</div><p style="font-size:14px;color:var(--muted);font-style:italic;">Il barista non ha risposto.<br>Riprova.</p>';
+      showClSub('cl-loading');return;
+    }
+    try {
+      const bin=await clBinGet();
+      if(!active)return;
+      const la=bin.lastApproval;
+      if(!la||la.cid!==cid||(Date.now()-la.ts)>90000)return;
+      active=false;clearInterval(cPollTimer);cPollTimer=null;
+      bin.lastApproval=null;clBinPut(bin).catch(()=>{});
+      if(la.denied){showClSub('cl-deny');return;}
+      const c=bin.clienti&&bin.clienti[cid];
+      if(!c){showClSub('cl-accedi');return;}
+      const{tipo,qty}=la;
+      curCId=cid;
+      const mancano=tipo==='caffe'?Math.max(0,OM-(c.puntiC||0)):Math.max(0,OM-(c.puntiK||0));
+      const nomeT=tipo==='caffe'?'caffè':'cappuccin'+(qty===1?'o':'i');
+      renderCartaCliente(c);
+      showClSub('cl-carta');
+      clTab('punti');
+      const msg=mancano===0?'🎉 +'+qty+' '+nomeT+' aggiunti! Omaggio disponibile!':'✅ +'+qty+' '+nomeT+' aggiunti! Mancano '+mancano+' al prossimo omaggio.';
+      showBigToast(msg);
+    } catch(e){}
+  },2000);
+}
+
+// ══════════════════════════════════════════════════
+// CLIENTE — Carta & Render
+// ══════════════════════════════════════════════════
+function renderUBadge(elId,c){
+  const el=document.getElementById(elId);if(!el)return;
+  const idStr=c.numId?String(c.numId).padStart(4,'0'):'';
+  const nc=((c.nome||'')+' '+(c.cognome||'')).trim();
+  el.innerHTML='<span class="uav">'+(c.avatar||'😊')+'</span>'
+    +'<div style="flex:1;"><div class="uname">'+(idStr?'<span class="id-badge">'+idStr+'</span>':'')+nc+'</div>'
+    +'<div class="usub">'+(c.email||'')+'</div></div>'
+    +'<button class="uout" onclick="logoutCliente()">Cambia</button>';
+}
+
+function renderCartaCliente(c){
+  renderUBadge('cl-carta-badge',c);
+  const ib=document.getElementById('cl-id-box');
+  const in2=document.getElementById('cl-id-num');
+  if(ib)ib.style.display='block';
+  if(in2)in2.textContent=c.numId?String(c.numId).padStart(4,'0'):'—';
+  const pC=c.puntiC||0,pK=c.puntiK||0;
+  document.getElementById('cl-free-c').style.display=pC>=OM?'flex':'none';
+  document.getElementById('cl-free-k').style.display=pK>=OM?'flex':'none';
+  buildStamps('cl-sg-c1','cl-sg-c2',pC,'caffe');
+  buildStamps('cl-sg-k1','cl-sg-k2',pK,'cappuccino');
+  const pctC=Math.round((pC/OM)*100);
+  document.getElementById('cl-prog-c').style.width=pctC+'%';
+  document.getElementById('cl-ptxt-c').textContent=pC+' / '+OM;
+  document.getElementById('cl-ppct-c').textContent=pctC+'%';
+  const pktK=Math.round((pK/OM)*100);
+  document.getElementById('cl-prog-k').style.width=pktK+'%';
+  document.getElementById('cl-ptxt-k').textContent=pK+' / '+OM;
+  document.getElementById('cl-ppct-k').textContent=pktK+'%';
+  document.getElementById('cl-nc').textContent=c.totC||0;
+  document.getElementById('cl-nk').textContent=c.totK||0;
+  document.getElementById('cl-no').textContent=c.totOmaggi||0;
+  document.getElementById('cl-np').textContent=pC+pK;
+  document.getElementById('cl-redeem-c').style.display=pC>=OM?'block':'none';
+  document.getElementById('cl-redeem-k').style.display=pK>=OM?'block':'none';
+  // Storico
+  const hist=c.storia||[];
+  const list=document.getElementById('cl-hist');
+  if(!hist.length){list.innerHTML='<li class="empty">Nessuna consumazione ancora.</li>';}
+  else list.innerHTML=hist.slice(0,30).map(h=>{
+    const ic=(h.tipo||'').includes('cappuccino')?'🥛':(h.tipo||'').includes('omaggio')?'🎁':'☕';
+    const nm=(h.tipo||'').includes('cappuccino')?'Cappuccino':(h.tipo||'').includes('omaggio')?'Omaggio':'Caffè';
+    const t=new Date(h.ts);
+    const tm=t.toLocaleDateString('it-IT',{day:'2-digit',month:'short'})+' '+t.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    return '<li class="hist-item"><span class="hist-icon">'+ic+'</span><span class="hist-name">'+nm+'</span><span class="hist-time">'+tm+'</span></li>';
+  }).join('');
+  // Notifiche
+  const notif=c.notifiche||[];
+  const nl=document.getElementById('cl-notif-list');
+  if(!notif.length){nl.innerHTML='<p class="empty">Nessuna notifica.</p>';}
+  else nl.innerHTML=notif.slice(0,20).map(n=>{
+    const icon=n.tipo==='gold'?'🎁':n.tipo==='danger'?'⚠️':'ℹ️';
+    const t=new Date(n.ts);
+    const tm=t.toLocaleDateString('it-IT',{day:'2-digit',month:'short'})+' '+t.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    return '<div style="padding:10px 0;border-bottom:.5px solid var(--latte);font-size:13px;'+(n.letta?'opacity:.6':'')+'"><span style="font-size:18px;margin-right:8px;">'+icon+'</span>'+n.msg+'<div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:3px;">'+tm+'</div></div>';
+  }).join('');
+}
+
+function buildStamps(id1,id2,pts,tipo){
+  [id1,id2].forEach((id,row)=>{
+    const g=document.getElementById(id);if(!g)return;
+    g.innerHTML='';
+    for(let i=0;i<5;i++){
+      const idx=row*5+i;
+      const d=document.createElement('div');
+      if(idx===9){d.className='stamp free';d.innerHTML='🎁<span class="stamp-num">GRATIS</span>';}
+      else if(idx<pts){d.className='stamp filled'+(tipo==='cappuccino'?' cap':'');d.innerHTML=tipo==='cappuccino'?'🥛':'☕';}
+      else{d.className='stamp';}
+      g.appendChild(d);
+    }
+  });
+}
+
+function clTab(t){
+  ['punti','storico','notifiche','profilo'].forEach(x=>{
+    const el=document.getElementById('cl-tab-'+x);if(el)el.style.display=x===t?'block':'none';
+    const btn=document.getElementById('cln-'+x);if(btn)btn.classList.toggle('active',x===t);
+  });
+  if(t==='profilo') caricaProfilo();
+}
+
+function logoutCliente(){
+  curCId=null;
+  localStorage.removeItem('cf_id');
+  localStorage.removeItem('cf_email');
+  showClSub('cl-accedi');
+}
+
+function caricaProfilo(){
+  if(!curCId||!window._clienteDbUrl)return;
+  clBinGet().then(bin=>{
+    const c=bin.clienti&&bin.clienti[curCId];
+    if(!c)return;
+    document.getElementById('prof-nome').value=c.nome||'';
+    document.getElementById('prof-cognome').value=c.cognome||'';
+    document.getElementById('prof-email').value=c.email||'';
+  }).catch(()=>{});
+}
+
+async function salvaProfilo(){
+  const nome=document.getElementById('prof-nome').value.trim();
+  const cognome=document.getElementById('prof-cognome').value.trim();
+  const email=document.getElementById('prof-email').value.trim().toLowerCase();
+  const msg=document.getElementById('prof-msg');
+  msg.style.display='none';
+  if(!nome){msg.textContent='Inserisci il nome.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  if(!email||!email.includes('@')){msg.textContent='Email non valida.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  try{
+    const bin=await clBinGet();
+    if(!bin.clienti[curCId])return;
+    bin.clienti[curCId].nome=nome;
+    bin.clienti[curCId].cognome=cognome;
+    bin.clienti[curCId].email=email;
+    await clBinPut(bin);
+    localStorage.setItem('cf_email',email);
+    // Aggiorna badge
+    renderUBadge('cl-carta-badge',bin.clienti[curCId]);
+    msg.textContent='✅ Dati aggiornati!';msg.style.color='var(--success)';msg.style.display='block';
+    setTimeout(()=>msg.style.display='none',3000);
+  }catch(e){msg.textContent='Errore: '+e.message;msg.style.color='var(--danger)';msg.style.display='block';}
+}
+
+async function cambiaPin(){
+  const oldPin=document.getElementById('prof-pin-old').value.trim();
+  const newPin=document.getElementById('prof-pin-new').value.trim();
+  const newPin2=document.getElementById('prof-pin-new2').value.trim();
+  const msg=document.getElementById('pin-msg');
+  msg.style.display='none';
+  if(!oldPin||!newPin||!newPin2){msg.textContent='Compila tutti i campi.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  if(newPin.length<4){msg.textContent='Il nuovo PIN deve essere di 4 cifre.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  if(newPin!==newPin2){msg.textContent='I due PIN non corrispondono.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+  try{
+    const bin=await clBinGet();
+    const c=bin.clienti&&bin.clienti[curCId];
+    if(!c){msg.textContent='Cliente non trovato.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+    if(c.pin!==oldPin){msg.textContent='PIN attuale errato.';msg.style.color='var(--danger)';msg.style.display='block';return;}
+    bin.clienti[curCId].pin=newPin;
+    await clBinPut(bin);
+    document.getElementById('prof-pin-old').value='';
+    document.getElementById('prof-pin-new').value='';
+    document.getElementById('prof-pin-new2').value='';
+    msg.textContent='✅ PIN aggiornato!';msg.style.color='var(--success)';msg.style.display='block';
+    setTimeout(()=>msg.style.display='none',3000);
+  }catch(e){msg.textContent='Errore: '+e.message;msg.style.color='var(--danger)';msg.style.display='block';}
+}
+
+// PWA install prompt
+let _pwaPrompt=null;
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  _pwaPrompt=e;
+  const btn=document.getElementById('pwa-install-btn');
+  if(btn)btn.style.display='flex';
+});
+function installPWA(){
+  if(!_pwaPrompt)return;
+  _pwaPrompt.prompt();
+  _pwaPrompt.userChoice.then(()=>{_pwaPrompt=null;});
+}
+
+// ══════════════════════════════════════════════════
+// CLIENTE — Riscatto omaggio
+// ══════════════════════════════════════════════════
+async function richiestaRiscatto(tipo){
+  if(!curCId||!window._clienteDbUrl){showToast('Errore: riprova.');return;}
+  try {
+    const bin=await clBinGet();
+    bin.riscattoReq={token:pendingToken||'direct',clienteId:curCId,tipo,ts:Date.now()};
+    bin.riscattoApproval=null;
+    await clBinPut(bin);
+    showToast('☕ Richiesta inviata al barista!');
+    // Poll riscatto
+    startRiscattoPoll(curCId);
+  } catch(e){showToast('❌ Errore: '+e.message);}
+}
+
+function startRiscattoPoll(cid){
+  let t=0;
+  const poll=setInterval(async()=>{
+    t+=2;if(t>120){clearInterval(poll);showToast('Nessuna risposta.');return;}
+    try {
+      const bin=await clBinGet();
+      const ra=bin.riscattoApproval;
+      if(!ra||ra.cid!==cid||(Date.now()-ra.ts)>120000)return;
+      clearInterval(poll);
+      bin.riscattoApproval=null;clBinPut(bin).catch(()=>{});
+      if(ra.denied){showToast('❌ Riscatto rifiutato dal barista.');return;}
+      const c=bin.clienti&&bin.clienti[cid];
+      if(c)renderCartaCliente(c);
+      showBigToast('🎁 Omaggio approvato! Buona consumazione!');
+    } catch(e){}
+  },2000);
+}
+
+// ══════════════════════════════════════════════════
+// TOAST & UI helpers
+// ══════════════════════════════════════════════════
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+function showBigToast(msg){
+  const old=document.getElementById('big-toast-el');if(old)old.remove();
+  const d=document.createElement('div');d.id='big-toast-el';d.className='big-toast';
+  d.innerHTML='<div style="font-size:16px;margin-bottom:8px;">'+msg+'</div>'
+    +'<button onclick="this.parentElement.remove()" style="background:none;border:1px solid rgba(255,255,255,.4);color:rgba(255,255,255,.8);padding:4px 14px;border-radius:20px;font-family:Georgia,serif;font-size:12px;cursor:pointer;">OK ✕</button>';
+  document.body.appendChild(d);
+  setTimeout(()=>{if(d.parentElement)d.remove();},7000);
+}
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+function goSetupStep(n) {
+  [1,2,3,4].forEach(i => {
+    document.getElementById('setup-step-'+i).style.display = i===n ? 'block' : 'none';
+    const bar = document.getElementById('sbar-'+i);
+    if (i < n) {
+      bar.style.background = 'var(--sbg)';
+      bar.style.color = 'var(--success)';
+      bar.style.borderBottom = '2px solid var(--success)';
+    } else if (i === n) {
+      bar.style.background = 'var(--espresso)';
+      bar.style.color = 'var(--gold)';
+      bar.style.borderBottom = '2px solid var(--gold)';
+    } else {
+      bar.style.background = '';
+      bar.style.color = 'var(--muted)';
+      bar.style.borderBottom = '';
+    }
+  });
+  window.scrollTo(0,0);
+}
+
+function copyRules() {
+  const rules = `{
+  "rules": {
+    "bars": {
+      "$uid": {
+        ".read": true,
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    }
+  }
+}`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(rules).then(() => showToast('✅ Regole copiate!'));
+  } else {
+    showToast('Copia manualmente il testo mostrato');
+  }
+}
+
+function saveFbConfig() {
+  const key = document.getElementById('fb-apikey').value.trim();
+  const err = document.getElementById('fb-err');
+  if (!key || !key.startsWith('AIza')) {
+    err.textContent = "API Key non valida. Deve iniziare con 'AIza'.";
+    err.style.display = 'block';
+    return;
+  }
+  // Salva in localStorage — mai nel codice sorgente
+  localStorage.setItem('fb_cfg', JSON.stringify({
+    apiKey: key,
+    authDomain: "bar-tessera-fedelta.firebaseapp.com",
+    databaseURL: "https://bar-tessera-fedelta-default-rtdb.firebaseio.com",
+    projectId: "bar-tessera-fedelta",
+    storageBucket: "bar-tessera-fedelta.firebasestorage.app",
+    messagingSenderId: "726579087537",
+    appId: "1:726579087537:web:1af0eb4a07bb18e51aba90"
+  }));
+  window.location.reload();
+}
+
+window.addEventListener('load',()=>{
+  // Carica dbUrl cliente da localStorage se presente
+  const savedDb=localStorage.getItem('cf_cl_db');
+  if(savedDb)window._clienteDbUrl=savedDb;
+
+  // PWA Manifest — installabile come app su Android e iOS
+  const icon = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%232C1810"/><text y=".9em" font-size="80" x="10">☕</text></svg>';
+  const manifest = {
+    name: 'Caffè Fedeltà',
+    short_name: 'CaffèFedeltà',
+    description: 'La tua carta fedeltà digitale',
+    start_url: window.location.pathname,
+    display: 'standalone',
+    background_color: '#FAF3EC',
+    theme_color: '#2C1810',
+    orientation: 'portrait',
+    icons: [{src:icon, sizes:'192x192', type:'image/svg+xml'},{src:icon, sizes:'512x512', type:'image/svg+xml'}]
+  };
+  const mBlob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+  const mUrl = URL.createObjectURL(mBlob);
+  document.getElementById('pwa-manifest').href = mUrl;
+  document.getElementById('pwa-icon').href = icon;
+  // Se è cliente senza Firebase, inizializza il flusso cliente
+  if(window._isClienteOnly) {
+    const p2 = new URLSearchParams(window.location.search);
+    const tok2 = p2.get('t');
+    const cp2  = p2.get('c');
+    const idp2 = p2.get('id');
+    if(tok2 && window._clienteDbUrl) {
+      initLanding(tok2);
+    } else if(cp2 && idp2 && window._clienteDbUrl) {
+      showClSub('cl-loading');
+      clBinGet().then(bin=>{
+        const c=bin.clienti&&bin.clienti[idp2];
+        if(c){curCId=idp2;localStorage.setItem('cf_id',idp2);renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+        else showClSub('cl-accedi');
+      }).catch(()=>showClSub('cl-accedi'));
+    } else {
+      const sid=localStorage.getItem('cf_id');
+      if(sid&&window._clienteDbUrl){
+        showClSub('cl-loading');
+        clBinGet().then(bin=>{
+          const c=bin.clienti&&bin.clienti[sid];
+          if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+          else showClSub('cl-accedi');
+        }).catch(()=>showClSub('cl-accedi'));
+      } else {
+        showClSub('cl-accedi');
+      }
+    }
+    return;
+  }
+  // Se _needFbConfig è già stato impostato dal modulo, non fare nulla
+  if(window._needFbConfig) return;
+  // Se Firebase non risponde entro 6s mostra auth
+  setTimeout(()=>{
+    if(document.getElementById('view-splash').classList.contains('active')){
+      showView('view-auth');
+      showPanel('auth-login-panel');
+    }
+  },6000);
+});
+</script>
+</body>
+</html>
