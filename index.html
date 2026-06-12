@@ -155,22 +155,154 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
      FIREBASE CONFIG SETUP (prima volta)
 ══════════════════════════════════════ -->
 <div class="view" id="view-fb-setup">
-  <div style="max-width:440px;margin:0 auto;padding:40px 24px;text-align:center;">
-    <div style="font-size:56px;margin-bottom:14px;">☕</div>
-    <h1 style="font-size:22px;font-weight:normal;color:var(--espresso);margin-bottom:6px;">Caffè Fedeltà</h1>
-    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:24px;">Configurazione Firebase — una tantum</p>
-    <div class="card" style="text-align:left;">
-      <h2 style="margin-bottom:12px;">Inserisci la tua Firebase API Key</h2>
-      <p style="font-size:12px;color:var(--muted);font-style:italic;line-height:1.7;margin-bottom:12px;">
-        1. Vai su <a href="https://console.firebase.google.com" target="_blank" style="color:var(--crema);">console.firebase.google.com</a><br>
-        2. Impostazioni progetto → Le tue app → Web<br>
-        3. Copia la <strong>apiKey</strong> dal firebaseConfig
-      </p>
-      <label class="lbl">API Key Firebase</label>
-      <input class="inp" id="fb-apikey" type="text" placeholder="AIzaSy..." autocomplete="off" style="font-family:monospace;font-size:13px;">
-      <button class="btn btn-dark" onclick="saveFbConfig()">✅ Salva e avvia</button>
-      <p id="fb-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+  <div style="max-width:480px;margin:0 auto;padding:0 0 40px;">
+
+    <!-- HEADER -->
+    <div style="background:var(--espresso);padding:28px 24px 22px;text-align:center;border-bottom:3px solid var(--gold);">
+      <div style="font-size:44px;margin-bottom:8px;">☕</div>
+      <h1 style="font-size:22px;font-weight:normal;color:white;margin-bottom:4px;">Caffè Fedeltà</h1>
+      <p style="font-size:13px;color:rgba(255,255,255,.6);font-style:italic;">Configurazione iniziale — segui i passi</p>
     </div>
+
+    <!-- PROGRESS BAR -->
+    <div style="display:flex;background:var(--latte);border-bottom:1px solid #e8d9c4;" id="setup-steps-bar">
+      <div id="sbar-1" style="flex:1;padding:10px 4px;text-align:center;font-size:11px;font-family:Georgia,serif;background:var(--espresso);color:var(--gold);border-bottom:2px solid var(--gold);">① Progetto</div>
+      <div id="sbar-2" style="flex:1;padding:10px 4px;text-align:center;font-size:11px;font-family:Georgia,serif;color:var(--muted);">② Database</div>
+      <div id="sbar-3" style="flex:1;padding:10px 4px;text-align:center;font-size:11px;font-family:Georgia,serif;color:var(--muted);">③ Regole</div>
+      <div id="sbar-4" style="flex:1;padding:10px 4px;text-align:center;font-size:11px;font-family:Georgia,serif;color:var(--muted);">④ API Key</div>
+    </div>
+
+    <!-- PASSO 1 -->
+    <div id="setup-step-1" style="padding:20px 18px;">
+      <div class="card" style="border-left:4px solid var(--gold);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="font-size:28px;">🔥</span>
+          <div>
+            <div style="font-size:16px;color:var(--espresso);">Crea il progetto Firebase</div>
+            <div style="font-size:12px;color:var(--muted);font-style:italic;">Gratuito — account Google richiesto</div>
+          </div>
+        </div>
+        <div style="background:var(--foam);border-radius:var(--rs);padding:14px;margin-bottom:14px;">
+          <div style="font-size:13px;color:var(--text);line-height:2.1;">
+            <b>1.</b> Clicca il bottone qui sotto per aprire Firebase Console<br>
+            <b>2.</b> Clicca <b>"Aggiungi progetto"</b><br>
+            <b>3.</b> Nome progetto: <code style="background:var(--latte);padding:2px 6px;border-radius:4px;">caffe-fedelta</code><br>
+            <b>4.</b> Disattiva Google Analytics (non serve)<br>
+            <b>5.</b> Clicca <b>"Crea progetto"</b> → attendi → <b>"Continua"</b>
+          </div>
+        </div>
+        <a href="https://console.firebase.google.com" target="_blank" class="btn btn-dark" style="text-decoration:none;display:flex;">
+          🔥 Apri Firebase Console
+        </a>
+        <div style="text-align:center;margin-top:4px;">
+          <button onclick="goSetupStep(2)" style="background:none;border:none;color:var(--success);font-size:14px;font-family:Georgia,serif;cursor:pointer;font-style:italic;">✅ Progetto creato → Avanti</button>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);font-style:italic;text-align:center;margin-top:8px;">Hai già un progetto Firebase? <button onclick="goSetupStep(2)" style="background:none;border:none;color:var(--crema);font-size:12px;font-family:Georgia,serif;cursor:pointer;text-decoration:underline;">Salta questo passo →</button></p>
+    </div>
+
+    <!-- PASSO 2 -->
+    <div id="setup-step-2" style="display:none;padding:20px 18px;">
+      <div class="card" style="border-left:4px solid var(--gold);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="font-size:28px;">🗄️</span>
+          <div>
+            <div style="font-size:16px;color:var(--espresso);">Crea il Realtime Database</div>
+            <div style="font-size:12px;color:var(--muted);font-style:italic;">Il database dove vengono salvati i punti</div>
+          </div>
+        </div>
+        <div style="background:var(--foam);border-radius:var(--rs);padding:14px;margin-bottom:14px;">
+          <div style="font-size:13px;color:var(--text);line-height:2.1;">
+            <b>1.</b> Nel tuo progetto Firebase, clicca il bottone qui sotto<br>
+            <b>2.</b> Nel menu a sinistra clicca <b>"Realtime Database"</b><br>
+            <b>3.</b> Clicca <b>"Crea database"</b><br>
+            <b>4.</b> Scegli regione <b>"europe-west1 (Belgium)"</b><br>
+            <b>5.</b> Seleziona <b>"Inizia in modalità test"</b><br>
+            <b>6.</b> Clicca <b>"Abilita"</b>
+          </div>
+        </div>
+        <a href="https://console.firebase.google.com" target="_blank" class="btn btn-dark" style="text-decoration:none;display:flex;">
+          🗄️ Apri Firebase Console
+        </a>
+        <div style="text-align:center;margin-top:4px;">
+          <button onclick="goSetupStep(3)" style="background:none;border:none;color:var(--success);font-size:14px;font-family:Georgia,serif;cursor:pointer;font-style:italic;">✅ Database creato → Avanti</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASSO 3 -->
+    <div id="setup-step-3" style="display:none;padding:20px 18px;">
+      <div class="card" style="border-left:4px solid var(--gold);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="font-size:28px;">🔒</span>
+          <div>
+            <div style="font-size:16px;color:var(--espresso);">Imposta le regole di accesso</div>
+            <div style="font-size:12px;color:var(--muted);font-style:italic;">Permette all'app di leggere e scrivere</div>
+          </div>
+        </div>
+        <div style="background:var(--foam);border-radius:var(--rs);padding:14px;margin-bottom:14px;">
+          <div style="font-size:13px;color:var(--text);line-height:2.1;">
+            <b>1.</b> Nel Realtime Database clicca il tab <b>"Regole"</b><br>
+            <b>2.</b> Sostituisci tutto il testo con quello qui sotto:<br>
+          </div>
+          <div style="background:var(--espresso);color:var(--gold);font-family:monospace;font-size:12px;padding:12px;border-radius:var(--rs);margin-top:10px;line-height:1.8;">
+            {<br>
+            &nbsp;&nbsp;"rules": {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;"bars": {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"$uid": {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".read": "auth != null",<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".write": "auth != null"<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+            &nbsp;&nbsp;}<br>
+            }
+          </div>
+          <button onclick="copyRules()" style="background:none;border:1px solid var(--crema);color:var(--crema);font-size:12px;font-family:Georgia,serif;cursor:pointer;padding:6px 12px;border-radius:var(--rs);margin-top:8px;width:100%;">📋 Copia le regole</button>
+          <div style="font-size:13px;color:var(--text);line-height:2.1;margin-top:10px;">
+            <b>3.</b> Clicca il bottone <b>"Pubblica"</b> in alto a destra
+          </div>
+        </div>
+        <a href="https://console.firebase.google.com" target="_blank" class="btn btn-dark" style="text-decoration:none;display:flex;">
+          🔒 Apri Firebase Console
+        </a>
+        <div style="text-align:center;margin-top:4px;">
+          <button onclick="goSetupStep(4)" style="background:none;border:none;color:var(--success);font-size:14px;font-family:Georgia,serif;cursor:pointer;font-style:italic;">✅ Regole pubblicate → Avanti</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASSO 4 -->
+    <div id="setup-step-4" style="display:none;padding:20px 18px;">
+      <div class="card" style="border-left:4px solid var(--gold);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="font-size:28px;">🔑</span>
+          <div>
+            <div style="font-size:16px;color:var(--espresso);">Copia la API Key</div>
+            <div style="font-size:12px;color:var(--muted);font-style:italic;">L'ultima cosa — promesso!</div>
+          </div>
+        </div>
+        <div style="background:var(--foam);border-radius:var(--rs);padding:14px;margin-bottom:14px;">
+          <div style="font-size:13px;color:var(--text);line-height:2.1;">
+            <b>1.</b> Clicca il bottone qui sotto<br>
+            <b>2.</b> Clicca l'icona ⚙️ <b>"Impostazioni progetto"</b> (in alto a sinistra)<br>
+            <b>3.</b> Scorri in basso fino a <b>"Le tue app"</b><br>
+            <b>4.</b> Se non hai app web: clicca <b>"&lt;/&gt;"</b> → nome <code style="background:var(--latte);padding:2px 6px;border-radius:4px;">caffefedelta</code> → Registra<br>
+            <b>5.</b> Trova il campo <b>apiKey</b> nel codice mostrato<br>
+            <b>6.</b> Copia il valore (inizia con <code style="background:var(--latte);padding:2px 6px;border-radius:4px;">AIzaSy...</code>)<br>
+            <b>7.</b> Incollalo qui sotto 👇
+          </div>
+        </div>
+        <a href="https://console.firebase.google.com" target="_blank" class="btn btn-ghost" style="text-decoration:none;display:flex;margin-bottom:14px;">
+          ⚙️ Apri Impostazioni Firebase
+        </a>
+        <label class="lbl">Incolla qui la tua API Key</label>
+        <input class="inp" id="fb-apikey" type="text" placeholder="AIzaSy..." autocomplete="off" style="font-family:monospace;font-size:13px;letter-spacing:.5px;">
+        <button class="btn btn-dark" onclick="saveFbConfig()" id="fb-save-btn">🚀 Salva e avvia l'app</button>
+        <p id="fb-err" style="color:var(--danger);font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
+      </div>
+      <p style="font-size:12px;color:var(--muted);font-style:italic;text-align:center;margin-top:8px;">La chiave viene salvata solo sul tuo dispositivo, mai online.</p>
+    </div>
+
   </div>
 </div>
 
@@ -598,7 +730,20 @@ import {
 // ── Config Firebase — apiKey da localStorage, mai nel codice ──
 const _stored = JSON.parse(localStorage.getItem('fb_cfg') || 'null');
 if (!_stored || !_stored.apiKey) {
-  // Mostra schermata setup e interrompi
+  // Controlla se è un cliente che arriva da QR — non ha bisogno di Firebase
+  const _p = new URLSearchParams(window.location.search);
+  const _tok = _p.get('t');
+  const _cp  = _p.get('c');
+  const _clDb = localStorage.getItem('cf_cl_db');
+  if (_tok || _cp || _clDb) {
+    // È un cliente — vai a view-cl senza Firebase Auth
+    document.getElementById('view-splash').classList.remove('active');
+    document.getElementById('view-cl').classList.add('active');
+    window._isClienteOnly = true;
+    window._needFbConfig = true;
+    throw new Error('firebase-config-needed');
+  }
+  // È il barista senza config — mostra setup
   document.getElementById('view-splash').classList.remove('active');
   document.getElementById('view-fb-setup').classList.add('active');
   window._needFbConfig = true;
@@ -765,6 +910,8 @@ window.onBaristaLogout = function() {
   const tok = p.get('t');
   const cp  = p.get('c');
   const idp = p.get('id');
+  // Se già in view-cl (cliente senza Firebase), non fare nulla
+  if (window._isClienteOnly) return;
 
   if (tok && cp) {
     // Decodifica database URL del bar dal QR
@@ -1352,19 +1499,11 @@ async function clBinPut(data){
 // ══════════════════════════════════════════════════
 function accessoClienteEmail(){
   showView('view-cl');
-  const sid=localStorage.getItem('cf_id');
   const savedDb=localStorage.getItem('cf_cl_db');
   if(savedDb)window._clienteDbUrl=savedDb;
-  if(sid&&window._clienteDbUrl){
-    showClSub('cl-loading');
-    clBinGet().then(bin=>{
-      const c=bin.clienti&&bin.clienti[sid];
-      if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
-      else showClSub('cl-accedi');
-    }).catch(()=>showClSub('cl-accedi'));
-  } else {
-    showClSub('cl-accedi');
-  }
+  // Mostra sempre la schermata di accesso — il PIN è obbligatorio
+  // Non caricare automaticamente la carta anche se cf_id è salvato
+  showClSub('cl-accedi');
 }
 
 async function accediConEmail(){
@@ -1393,20 +1532,24 @@ async function accediConId(){
   const raw=(document.getElementById('acc-id')?.value||'').trim();
   const err=document.getElementById('acc-err');
   if(!raw||isNaN(raw)){err.textContent='Inserisci un numero tessera valido.';err.style.display='block';return;}
-  if(!window._clienteDbUrl){err.textContent='Scansiona prima il QR del barista.';err.style.display='block';return;}
+  if(!window._clienteDbUrl){err.textContent='Scansiona prima il QR del barista per collegare il bar.';err.style.display='block';return;}
   const num=parseInt(raw,10);
   err.style.display='none';
+  const btn=document.getElementById('acc-id').nextElementSibling;
+  if(btn){btn.disabled=true;btn.textContent='⏳...';}
   try {
     const bin=await clBinGet();
     const found=Object.values(bin.clienti||{}).find(c=>c.numId===num);
-    if(!found){err.textContent='Numero tessera non trovato.';err.style.display='block';return;}
+    if(!found){err.textContent='Numero tessera non trovato. Controlla il numero o registrati scansionando il QR.';err.style.display='block';if(btn){btn.disabled=false;btn.textContent='🔢 Accedi con numero tessera';}return;}
+    // Mostra SEMPRE il PIN — obbligatorio
     clPinTarget=found;
     document.getElementById('cl-pin-avatar').textContent=found.avatar||'😊';
     document.getElementById('cl-pin-nome').textContent=((found.nome||'')+' '+(found.cognome||'')).trim();
     clPinBuf='';updateClPinDots();
     document.getElementById('cl-pin-err').textContent='';
     showClSub('cl-pin');
-  } catch(e){err.textContent='Errore connessione.';err.style.display='block';}
+  } catch(e){err.textContent='Errore connessione. Riprova.';err.style.display='block';}
+  if(btn){btn.disabled=false;btn.textContent='🔢 Accedi con numero tessera';}
 }
 
 // ══════════════════════════════════════════════════
@@ -1426,14 +1569,29 @@ function clPinKey(k){
 
 function checkClPin(){
   if(!clPinTarget)return;
+  // Se il cliente non ha un PIN impostato (account vecchio), blocca l'accesso
+  if(!clPinTarget.pin){
+    document.getElementById('cl-pin-err').textContent='PIN non impostato. Chiedi al barista di impostarne uno dalla tua scheda.';
+    clPinBuf='';updateClPinDots();
+    return;
+  }
   if(clPinBuf===clPinTarget.pin){
     curCId=clPinTarget.id;
     localStorage.setItem('cf_id',clPinTarget.id);
     localStorage.setItem('cf_email',clPinTarget.email||'');
-    renderCartaCliente(clPinTarget);
-    showClSub('cl-carta');
-    clTab('punti');
-    clPinTarget=null;clPinBuf='';
+    // Ricarica dati freschi dal database prima di mostrare la carta
+    showClSub('cl-loading');
+    clBinGet().then(bin=>{
+      const c=bin.clienti&&bin.clienti[clPinTarget.id];
+      if(c){renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+      else{showClSub('cl-accedi');}
+      clPinTarget=null;clPinBuf='';
+    }).catch(()=>{
+      // Fallback: usa dati in memoria
+      renderCartaCliente(clPinTarget);
+      showClSub('cl-carta');clTab('punti');
+      clPinTarget=null;clPinBuf='';
+    });
   } else {
     document.getElementById('cl-pin-err').textContent='PIN errato. Riprova.';
     clPinBuf='';updateClPinDots();
@@ -1460,9 +1618,15 @@ async function initLanding(token){
     const bin=await clBinGet();
     const age=(Date.now()-(bin.tokenTs||0))/1000;
     if(bin.token!==token||age>QR_TTL+5){
-      // QR scaduto — tenta accesso diretto
+      // QR scaduto — mostra PIN (non entrare direttamente)
       if(savedId&&bin.clienti&&bin.clienti[savedId]){
-        curCId=savedId;renderCartaCliente(bin.clienti[savedId]);showClSub('cl-carta');clTab('punti');showToast('QR scaduto — ecco la tua carta');
+        const cScad=bin.clienti[savedId];
+        clPinTarget=cScad;
+        document.getElementById('cl-pin-avatar').textContent=cScad.avatar||'😊';
+        document.getElementById('cl-pin-nome').textContent=((cScad.nome||'')+' '+(cScad.cognome||'')).trim();
+        clPinBuf='';updateClPinDots();
+        document.getElementById('cl-pin-err').textContent='QR scaduto — inserisci il tuo PIN per continuare';
+        showClSub('cl-pin');
       } else {
         showRegistration(savedEmail||'');
         showToast('QR scaduto — registrati comunque!');
@@ -1728,6 +1892,45 @@ function showBigToast(msg){
 // ══════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════
+function goSetupStep(n) {
+  [1,2,3,4].forEach(i => {
+    document.getElementById('setup-step-'+i).style.display = i===n ? 'block' : 'none';
+    const bar = document.getElementById('sbar-'+i);
+    if (i < n) {
+      bar.style.background = 'var(--sbg)';
+      bar.style.color = 'var(--success)';
+      bar.style.borderBottom = '2px solid var(--success)';
+    } else if (i === n) {
+      bar.style.background = 'var(--espresso)';
+      bar.style.color = 'var(--gold)';
+      bar.style.borderBottom = '2px solid var(--gold)';
+    } else {
+      bar.style.background = '';
+      bar.style.color = 'var(--muted)';
+      bar.style.borderBottom = '';
+    }
+  });
+  window.scrollTo(0,0);
+}
+
+function copyRules() {
+  const rules = `{
+  "rules": {
+    "bars": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    }
+  }
+}`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(rules).then(() => showToast('✅ Regole copiate!'));
+  } else {
+    showToast('Copia manualmente il testo mostrato');
+  }
+}
+
 function saveFbConfig() {
   const key = document.getElementById('fb-apikey').value.trim();
   const err = document.getElementById('fb-err');
@@ -1753,6 +1956,36 @@ window.addEventListener('load',()=>{
   // Carica dbUrl cliente da localStorage se presente
   const savedDb=localStorage.getItem('cf_cl_db');
   if(savedDb)window._clienteDbUrl=savedDb;
+  // Se è cliente senza Firebase, inizializza il flusso cliente
+  if(window._isClienteOnly) {
+    const p2 = new URLSearchParams(window.location.search);
+    const tok2 = p2.get('t');
+    const cp2  = p2.get('c');
+    const idp2 = p2.get('id');
+    if(tok2 && window._clienteDbUrl) {
+      initLanding(tok2);
+    } else if(cp2 && idp2 && window._clienteDbUrl) {
+      showClSub('cl-loading');
+      clBinGet().then(bin=>{
+        const c=bin.clienti&&bin.clienti[idp2];
+        if(c){curCId=idp2;localStorage.setItem('cf_id',idp2);renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+        else showClSub('cl-accedi');
+      }).catch(()=>showClSub('cl-accedi'));
+    } else {
+      const sid=localStorage.getItem('cf_id');
+      if(sid&&window._clienteDbUrl){
+        showClSub('cl-loading');
+        clBinGet().then(bin=>{
+          const c=bin.clienti&&bin.clienti[sid];
+          if(c){curCId=sid;renderCartaCliente(c);showClSub('cl-carta');clTab('punti');}
+          else showClSub('cl-accedi');
+        }).catch(()=>showClSub('cl-accedi'));
+      } else {
+        showClSub('cl-accedi');
+      }
+    }
+    return;
+  }
   // Se _needFbConfig è già stato impostato dal modulo, non fare nulla
   if(window._needFbConfig) return;
   // Se Firebase non risponde entro 6s mostra auth
