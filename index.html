@@ -153,15 +153,20 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
 </head>
 <body>
 
+<!-- ══════════════════════════════════════
+     FIREBASE CONFIG SETUP (prima volta)
+══════════════════════════════════════ -->
 <div class="view" id="view-fb-setup">
   <div style="max-width:480px;margin:0 auto;padding:0 0 40px;">
 
+    <!-- HEADER -->
     <div style="background:var(--espresso);padding:28px 24px 22px;text-align:center;border-bottom:3px solid var(--gold);">
       <div style="font-size:44px;margin-bottom:8px;">☕</div>
       <h1 style="font-size:22px;font-weight:normal;color:white;margin-bottom:4px;">Caffè Fedeltà</h1>
       <p style="font-size:13px;color:rgba(255,255,255,.6);font-style:italic;">Configurazione iniziale — segui i passi</p>
     </div>
 
+    <!-- PROGRESS BAR -->
     <div style="display:flex;background:var(--latte);border-bottom:1px solid #e8d9c4;" id="setup-steps-bar">
       <div id="sbar-1" style="flex:1;padding:10px 4px;text-align:center;font-size:11px;font-family:Georgia,serif;background:var(--espresso);color:var(--gold);border-bottom:2px solid var(--gold);">① Progetto</div>
       <div id="sbar-2" style="flex:1;padding:10px 4px;text-align:center;font-size:11px;font-family:Georgia,serif;color:var(--muted);">② Database</div>
@@ -169,6 +174,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <div id="sbar-4" style="flex:1;padding:10px 4px;text-align:center;font-size:11px;font-family:Georgia,serif;color:var(--muted);">④ API Key</div>
     </div>
 
+    <!-- PASSO 1 -->
     <div id="setup-step-1" style="padding:20px 18px;">
       <div class="card" style="border-left:4px solid var(--gold);">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
@@ -197,6 +203,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <p style="font-size:12px;color:var(--muted);font-style:italic;text-align:center;margin-top:8px;">Hai già un progetto Firebase? <button onclick="goSetupStep(2)" style="background:none;border:none;color:var(--crema);font-size:12px;font-family:Georgia,serif;cursor:pointer;text-decoration:underline;">Salta questo passo →</button></p>
     </div>
 
+    <!-- PASSO 2 -->
     <div id="setup-step-2" style="display:none;padding:20px 18px;">
       <div class="card" style="border-left:4px solid var(--gold);">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
@@ -225,6 +232,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       </div>
     </div>
 
+    <!-- PASSO 3 -->
     <div id="setup-step-3" style="display:none;padding:20px 18px;">
       <div class="card" style="border-left:4px solid var(--gold);">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
@@ -265,6 +273,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       </div>
     </div>
 
+    <!-- PASSO 4 -->
     <div id="setup-step-4" style="display:none;padding:20px 18px;">
       <div class="card" style="border-left:4px solid var(--gold);">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
@@ -298,6 +307,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
   </div>
 </div>
 
+<!-- ══ NUOVA HOME PUBBLICA (primo schermo per tutti) ══ -->
 <div class="view" id="view-home">
   <div style="max-width:420px;margin:0 auto;padding:48px 24px 32px;text-align:center;">
     <div style="font-size:60px;margin-bottom:12px;">☕</div>
@@ -321,6 +331,9 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
   </div>
 </div>
 
+<!-- ══════════════════════════════════════
+     SELEZIONE BAR (cliente senza QR)
+══════════════════════════════════════ -->
 <div class="view" id="view-scegli-bar">
   <div style="max-width:440px;margin:0 auto;padding:32px 20px;">
     <div style="text-align:center;margin-bottom:24px;">
@@ -339,6 +352,9 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
   </div>
 </div>
 
+<!-- ══════════════════════════════════════
+     SPLASH (loading iniziale)
+══════════════════════════════════════ -->
 <div class="view active" id="view-splash">
   <div class="centered">
     <div style="font-size:64px;margin-bottom:16px;">☕</div>
@@ -347,12 +363,16 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
   </div>
 </div>
 
+<!-- ══════════════════════════════════════
+     BARISTA AUTH — Login
+══════════════════════════════════════ -->
 <div class="view" id="view-auth">
   <div style="max-width:420px;margin:0 auto;padding:40px 24px;text-align:center;">
     <div style="font-size:56px;margin-bottom:14px;">☕</div>
     <h1 style="font-size:24px;font-weight:normal;color:var(--espresso);margin-bottom:6px;">Caffè Fedeltà</h1>
     <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:28px;">Accesso barista</p>
 
+    <!-- LOGIN -->
     <div id="auth-login-panel" class="card" style="text-align:left;">
       <h2 style="margin-bottom:14px;">Accedi al tuo bar</h2>
       <label class="lbl">Email</label>
@@ -369,6 +389,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       </div>
     </div>
 
+    <!-- REGISTRAZIONE BAR -->
     <div id="auth-reg-panel" class="card" style="text-align:left;display:none;">
       <h2 style="margin-bottom:14px;">Registra il tuo bar</h2>
       <label class="lbl">Nome del bar</label>
@@ -384,6 +405,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       </div>
     </div>
 
+    <!-- RESET PASSWORD -->
     <div id="auth-reset-panel" class="card" style="text-align:left;display:none;">
       <h2 style="margin-bottom:14px;">Reset password</h2>
       <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:14px;line-height:1.6;">Inserisci la tua email. Ti manderemo un link per impostare una nuova password.</p>
@@ -402,13 +424,18 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
   </div>
 </div>
 
+<!-- ══════════════════════════════════════
+     BARISTA — Dashboard Principale
+══════════════════════════════════════ -->
 <div class="view" id="view-barista">
+  <!-- Top Header Locale / Locali -->
   <div style="position:sticky; top:0; z-index:11; background:var(--espresso);">
     <div style="color:white; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
        <div id="b-locale-name" style="font-weight:bold; font-size:15px; font-family:'Georgia',serif; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;">☕ Bar</div>
        <button onclick="caricaLocali(window._currentUser, true)" style="background:var(--gold); color:white; border:none; padding:6px 10px; border-radius:var(--rs); font-size:11px; font-family:'Georgia',serif; cursor:pointer; flex-shrink:0;">Locali 🏢</button>
     </div>
     
+    <!-- Navigazione Interna -->
     <nav class="nav" style="position:static; border-top:1px solid rgba(255,255,255,0.1);">
       <button class="nav-btn active" onclick="bTab('qr')" id="bnav-qr">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3m0 4h4v-4m-7 4h3"/></svg>
@@ -429,6 +456,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     </nav>
   </div>
 
+  <!-- QR TAB -->
   <div class="page active" id="bpage-qr">
     <div class="approv" id="approv-cons">
       <div style="font-size:16px;font-weight:normal;color:var(--success);margin-bottom:4px;">🔔 Cliente in attesa!</div>
@@ -475,9 +503,11 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     </div>
   </div>
 
+  <!-- CLIENTI TAB -->
   <div class="page" id="bpage-clienti">
     <div class="hdr"><span class="cup">👥</span><h1>Clienti registrati</h1></div>
     
+    <!-- Pulsante Inserimento Manuale -->
     <button class="btn btn-dark" onclick="apriAggiungiCliente()" style="margin-bottom:14px; font-size:14px; padding:10px;">➕ Aggiungi cliente manualmente</button>
 
     <div class="search-wrap">
@@ -494,6 +524,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     <div class="card" id="clienti-list"><p class="empty">Nessun cliente ancora.</p></div>
   </div>
 
+  <!-- STATS TAB -->
   <div class="page" id="bpage-stats">
     <div class="hdr"><span class="cup">📊</span><h1>Statistiche</h1></div>
     <div class="card">
@@ -507,6 +538,9 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
   </div>
 </div>
 
+<!-- ══════════════════════════════════════
+     SCHEDA CLIENTE (barista)
+══════════════════════════════════════ -->
 <div class="view" id="view-scheda">
   <nav class="nav" style="justify-content:flex-start;">
     <button class="back-btn" onclick="showView('view-barista');bTab('clienti')">← Clienti</button>
@@ -515,6 +549,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
   <div style="max-width:480px;margin:0 auto;padding:14px;" id="scheda-body"></div>
 </div>
 
+<!-- ══ SELEZIONE LOCALE (barista multi-locale) ══ -->
 <div class="view" id="view-locali">
   <div style="max-width:420px;margin:0 auto;padding:32px 20px;">
     <div style="text-align:center;margin-bottom:24px;">
@@ -535,6 +570,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
   </div>
 </div>
 
+<!-- ══ AGGIUNGI CLIENTE MANUALE ══ -->
 <div class="view" id="view-add-cliente">
   <nav class="nav" style="justify-content:flex-start;">
     <button class="back-btn" onclick="showView('view-barista');bTab('clienti')">← Clienti</button>
@@ -557,8 +593,12 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
   </div>
 </div>
 
+<!-- ══════════════════════════════════════
+     CLIENTE — View principale
+══════════════════════════════════════ -->
 <div class="view" id="view-cl">
 
+  <!-- Accedi con email/PIN -->
   <div id="cl-accedi" style="display:none;max-width:480px;margin:0 auto;padding:22px 18px;">
     <div style="text-align:center;margin-bottom:16px;">
       <div style="font-size:50px;margin-bottom:9px;">☕</div>
@@ -573,6 +613,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       ℹ️ Prima volta? Scansiona il QR del tuo bar per collegarlo
     </div>
 
+    <!-- SEZIONE: GIÀ CLIENTE -->
     <div style="background:var(--espresso);border-radius:var(--r);padding:16px 18px;margin-bottom:14px;">
       <div style="color:var(--gold);font-size:15px;margin-bottom:14px;">🔑 Sei già cliente?</div>
       <label class="lbl" style="color:rgba(255,255,255,.7);">La tua email</label>
@@ -585,6 +626,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <p id="acc-err" style="color:#ffb3b3;font-size:13px;font-style:italic;margin-top:6px;display:none;"></p>
     </div>
 
+    <!-- SEZIONE: PRIMO ACCESSO -->
     <div style="background:white;border-radius:var(--r);border:1px solid var(--latte);padding:16px 18px;text-align:center;">
       <div style="font-size:14px;color:var(--espresso);margin-bottom:6px;">🆕 Non sei ancora registrato?</div>
       <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px;line-height:1.6;">Chiedi al barista di mostrarti il QR code.<br>Scansionalo per registrarti in 30 secondi.</p>
@@ -593,6 +635,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     <div style="text-align:center;margin-top:12px;"><button onclick="showView('view-home')" style="background:none;border:none;color:var(--muted);font-size:12px;font-style:italic;cursor:pointer;font-family:'Georgia',serif;text-decoration:underline;">← Torna alla home</button></div>
   </div>
 
+  <!-- PIN cliente (dopo email trovata) -->
   <div id="cl-pin" style="display:none;">
     <div class="pin-screen">
       <div style="font-size:42px;margin-bottom:8px;" id="cl-pin-avatar">😊</div>
@@ -615,11 +658,13 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     </div>
   </div>
 
+  <!-- Loading -->
   <div id="cl-loading" style="display:none;text-align:center;padding:60px 20px;">
     <div style="font-size:44px;" class="spin">⏳</div>
     <p style="margin-top:12px;font-size:14px;color:var(--muted);font-style:italic;">Connessione in corso...</p>
   </div>
 
+  <!-- Registrazione -->
   <div id="cl-register" style="display:none;max-width:480px;margin:0 auto;padding:24px 18px;">
     <div style="text-align:center;margin-bottom:20px;">
       <div style="font-size:50px;margin-bottom:9px;">☕</div>
@@ -642,6 +687,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     </div>
   </div>
 
+  <!-- Attesa barista -->
   <div id="cl-waiting" style="display:none;max-width:480px;margin:0 auto;padding:24px 18px;">
     <div id="cl-user-badge-wait" class="ubadge" style="display:none;"></div>
     <div class="card" style="text-align:center;padding:30px 16px;">
@@ -655,6 +701,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     </div>
   </div>
 
+  <!-- Rifiutato -->
   <div id="cl-deny" style="display:none;max-width:480px;margin:0 auto;padding:24px 18px;">
     <div class="alert alert-danger">
       <div class="ai">❌</div>
@@ -663,6 +710,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
     <button class="btn btn-ghost" onclick="showClSub('cl-accedi')">← Torna indietro</button>
   </div>
 
+  <!-- Carta fedeltà -->
   <div id="cl-carta" style="display:none;">
     <nav class="nav">
       <button class="nav-btn active" onclick="clTab('punti')" id="cln-punti">
@@ -683,6 +731,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       </button>
     </nav>
 
+    <!-- PUNTI -->
     <div id="cl-tab-punti" style="max-width:480px;margin:0 auto;padding:14px;">
       <div id="cl-carta-badge" class="ubadge"></div>
       <div id="cl-id-box" style="display:none;text-align:center;background:var(--espresso);border-radius:var(--r);padding:12px;margin-bottom:13px;">
@@ -738,17 +787,21 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
       <button onclick="logoutCliente()" style="background:none;border:none;color:var(--muted);font-size:12px;font-style:italic;cursor:pointer;width:100%;text-align:center;padding:8px;text-decoration:underline;font-family:'Georgia',serif;">Cambia account</button>
     </div>
 
+    <!-- STORICO -->
     <div id="cl-tab-storico" style="display:none;max-width:480px;margin:0 auto;padding:14px;">
       <div class="card"><ul class="hist-list" id="cl-hist"></ul></div>
     </div>
 
+    <!-- NOTIFICHE -->
     <div id="cl-tab-notifiche" style="display:none;max-width:480px;margin:0 auto;padding:14px;">
       <div class="card" id="cl-notif-list"><p class="empty">Nessuna notifica.</p></div>
     </div>
 
+    <!-- PROFILO -->
     <div id="cl-tab-profilo" style="display:none;max-width:480px;margin:0 auto;padding:14px;">
       <div class="hdr"><span class="cup">👤</span><h1>Il mio profilo</h1></div>
 
+      <!-- Modifica dati -->
       <div class="card">
         <h2 style="margin-bottom:14px;">Modifica i tuoi dati</h2>
         <label class="lbl">Nome</label>
@@ -761,6 +814,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
         <p id="prof-msg" style="font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
       </div>
 
+      <!-- Cambia PIN -->
       <div class="card">
         <h2 style="margin-bottom:14px;">Cambia PIN</h2>
         <label class="lbl">PIN attuale</label>
@@ -773,6 +827,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
         <p id="pin-msg" style="font-size:13px;font-style:italic;margin-top:4px;display:none;"></p>
       </div>
 
+      <!-- Aggiungi a schermata home -->
       <div class="card" style="background:var(--espresso);border:none;">
         <h2 style="color:var(--gold);margin-bottom:10px;">📱 Aggiungi alla schermata Home</h2>
         <p style="font-size:13px;color:rgba(255,255,255,.7);font-style:italic;line-height:1.8;margin-bottom:14px;">
@@ -801,6 +856,7 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
         </div>
       </div>
 
+      <!-- Logout -->
       <div class="card" style="text-align:center;">
         <button onclick="logoutCliente()" class="btn btn-ghost">🚪 Cambia account</button>
       </div>
@@ -810,6 +866,9 @@ body{font-family:'Georgia',serif;background:var(--foam);color:var(--text);min-he
 
 <div class="toast" id="toast"></div>
 
+<!-- ══════════════════════════════════════
+     FIREBASE SDK (CDN — no bundler)
+══════════════════════════════════════ -->
 <script>
 // Estrai e salva _clienteDbUrl PRIMA che il modulo Firebase si carichi
 // Così funziona anche se il barista non è loggato
@@ -889,13 +948,11 @@ onAuthStateChanged(auth, (user) => {
     window._currentUser = user;
     window._barId = user.uid;
     window._dbUrl = firebaseConfig.databaseURL + '/bars/' + user.uid;
-    // Carica nome bar e mostra view-mode
     window.onBaristaAuth(user);
   } else {
     window._currentUser = null;
     window._barId = null;
     window._dbUrl = null;
-    // Controlla se cliente locale
     window.onBaristaLogout();
   }
 });
@@ -1310,18 +1367,20 @@ function checkOmaggiAlert(bin) {
     let html='';
     pronti.forEach(c=>{
       const id=c.numId?String(c.numId).padStart(4,'0'):'';
-      const nc=((c.nome||'')+' '+(c.cognome||'')).trim();
+      const nc=((c.nome||'')+' '+(c.cognome||'')).trim().replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+      const cid = c.id;
+      
       if((c.puntiC||0)>=OM){
-        html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid rgba(212,168,83,.3);">'
-          +'<span style="font-size:13px;"><b>'+(id?id+' — ':'')+nc+'</b> · ☕ caffè</span>'
-          +'<button onclick="approvaRiscattoManuale(\''+c.id+'\',\'caffe\')" style="background:var(--gold);border:none;color:white;padding:5px 10px;border-radius:var(--rs);font-family:Georgia,serif;font-size:12px;cursor:pointer;">🎁 Riscatta</button>'
-          +'</div>';
+        html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid rgba(212,168,83,.3);">
+          <span style="font-size:13px;"><b>${id?id+' — ':''}${nc}</b> · ☕ caffè</span>
+          <button onclick="approvaRiscattoManuale('${cid}','caffe')" style="background:var(--gold);border:none;color:white;padding:5px 10px;border-radius:var(--rs);font-family:Georgia,serif;font-size:12px;cursor:pointer;">🎁 Riscatta</button>
+          </div>`;
       }
       if((c.puntiK||0)>=OM){
-        html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid rgba(212,168,83,.3);">'
-          +'<span style="font-size:13px;"><b>'+(id?id+' — ':'')+nc+'</b> · 🥛 cappuccino</span>'
-          +'<button onclick="approvaRiscattoManuale(\''+c.id+'\',\'cappuccino\')" style="background:var(--gold);border:none;color:white;padding:5px 10px;border-radius:var(--rs);font-family:Georgia,serif;font-size:12px;cursor:pointer;">🎁 Riscatta</button>'
-          +'</div>';
+        html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid rgba(212,168,83,.3);">
+          <span style="font-size:13px;"><b>${id?id+' — ':''}${nc}</b> · 🥛 cappuccino</span>
+          <button onclick="approvaRiscattoManuale('${cid}','cappuccino')" style="background:var(--gold);border:none;color:white;padding:5px 10px;border-radius:var(--rs);font-family:Georgia,serif;font-size:12px;cursor:pointer;">🎁 Riscatta</button>
+          </div>`;
       }
     });
     document.getElementById('b-omaggi-nomi').innerHTML=html;
